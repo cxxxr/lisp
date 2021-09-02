@@ -1,5 +1,12 @@
 mod lisp;
-use std::io::{stdin, BufRead, BufReader};
+use std::io::{self, stdin, stdout, BufRead, BufReader, Write};
+
+fn prompt(s: &str) -> io::Result<()> {
+    let stdout = stdout();
+    let mut stdout = stdout.lock();
+    stdout.write(s.as_bytes())?;
+    stdout.flush()
+}
 
 fn main() {
     let stdin = stdin();
@@ -8,12 +15,13 @@ fn main() {
     let mut lines = stdin.lines();
 
     loop {
+        prompt("LISP> ").unwrap();
         if let Some(Ok(input)) = lines.next() {
-            let r = lisp::reader::read_from_string(&input);
-            match r {
-                Ok((obj, _pos)) => {
-                    println!("{}", obj);
-                }
+            match lisp::reader::read_from_string(&input) {
+                Ok((obj, _pos)) => match lisp::eval::eval(obj) {
+                    Ok(result) => println!("{}", result),
+                    Err(e) => unimplemented!(),
+                },
                 Err(e) => {
                     println!("error: {:?}", e);
                 }

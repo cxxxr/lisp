@@ -13,13 +13,13 @@ pub type Object = Rc<ObjectKind>;
 
 #[derive(Debug)]
 pub struct Cons {
-    car: Object,
-    cdr: Object,
+    pub car: Object,
+    pub cdr: Object,
 }
 
 impl Cons {
-    pub fn new(car: Object, cdr: Object) -> Cons {
-        Cons { car, cdr }
+    pub fn new(car: Object, cdr: Object) -> Self {
+        Self { car, cdr }
     }
 }
 
