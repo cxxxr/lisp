@@ -1,17 +1,21 @@
 use core::fmt;
 use std::rc::Rc;
 
-#[derive(Debug)]
+pub enum Error {
+    UnboundVariable(String),
+    MismatchType(Object),
+}
+
 pub enum ObjectKind {
-    Cons(Cons),
+    Nil,
     Fixnum(isize),
     Symbol(String),
-    Nil,
+    Cons(Cons),
+    Func(fn(&[Object]) -> Result<Object, Error>),
 }
 
 pub type Object = Rc<ObjectKind>;
 
-#[derive(Debug)]
 pub struct Cons {
     pub car: Object,
     pub cdr: Object,
@@ -25,7 +29,10 @@ impl Cons {
 
 // constructor
 pub fn cons(car: Object, cdr: Object) -> Object {
-    Rc::new(ObjectKind::Cons(Cons::new(Rc::clone(&car), Rc::clone(&cdr))))
+    Rc::new(ObjectKind::Cons(Cons::new(
+        Rc::clone(&car),
+        Rc::clone(&cdr),
+    )))
 }
 
 pub fn fixnum(n: isize) -> Object {
@@ -44,10 +51,11 @@ pub fn nil() -> Object {
 impl fmt::Display for ObjectKind {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            ObjectKind::Cons(cons) => cons.fmt(f),
+            ObjectKind::Nil => write!(f, "nil"),
             ObjectKind::Fixnum(n) => n.fmt(f),
             ObjectKind::Symbol(s) => s.fmt(f),
-            ObjectKind::Nil => write!(f, "nil"),
+            ObjectKind::Cons(cons) => cons.fmt(f),
+            ObjectKind::Func(func) => write!(f, "<Fn {:p}>", &func),
         }
     }
 }

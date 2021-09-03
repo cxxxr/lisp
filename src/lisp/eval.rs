@@ -1,11 +1,7 @@
 use std::collections::HashMap;
 use std::rc::Rc;
 
-use super::object::{Object, ObjectKind};
-
-pub enum EvalError {
-    UnboundVariable(String),
-}
+use super::object::{Object, ObjectKind, Error, Cons};
 
 struct Env {
     parent: Option<Box<Env>>,
@@ -32,17 +28,17 @@ impl Env {
     }
 }
 
-fn eval_internal(x: Object, env: &mut Env) -> Result<Object, EvalError> {
+fn eval_internal(x: Object, env: &mut Env) -> Result<Object, Error> {
     match &*x {
-        ObjectKind::Nil | ObjectKind::Fixnum(_) => Ok(x),
-        ObjectKind::Symbol(s) => env.get(s).ok_or(EvalError::UnboundVariable(s.to_string())),
+        ObjectKind::Nil | ObjectKind::Fixnum(_) | ObjectKind::Func(_) => Ok(x),
+        ObjectKind::Symbol(s) => env.get(s).ok_or(Error::UnboundVariable(s.to_string())),
         ObjectKind::Cons(list) => {
             unimplemented!()
         }
     }
 }
 
-pub fn eval(x: Object) -> Result<Object, EvalError> {
+pub fn eval(x: Object) -> Result<Object, Error> {
     let mut e = Env::new();
     eval_internal(x, &mut e)
 }
