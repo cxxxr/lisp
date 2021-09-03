@@ -25,6 +25,39 @@ impl Cons {
     pub fn new(car: Object, cdr: Object) -> Self {
         Self { car, cdr }
     }
+
+    pub fn iter(&self) -> ListIter {
+        ListIter {
+            cons: self,
+            is_end: false,
+        }
+    }
+}
+
+pub struct ListIter<'a> {
+    cons: &'a Cons,
+    is_end: bool,
+}
+
+impl<'a> Iterator for ListIter<'a> {
+    type Item = Object;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.is_end {
+            return None;
+        }
+        match &*self.cons.cdr {
+            ObjectKind::Cons(cons) => {
+                let result = Some(Rc::clone(&self.cons.car));
+                self.cons = cons;
+                result
+            }
+            _ => {
+                self.is_end = true;
+                Some(Rc::clone(&self.cons.car))
+            }
+        }
+    }
 }
 
 // constructor
