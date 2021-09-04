@@ -1,11 +1,34 @@
 use core::fmt;
 use std::rc::Rc;
 
-pub enum RuntimeError {
-    UnboundVariable(String),
-    MismatchType(Object),
+#[derive(Debug)]
+pub enum ObjectType {
+    Number,
+    Function,
 }
 
+#[derive(Debug)]
+pub enum RuntimeError {
+    UnboundVariable(String),
+    MismatchType(MismatchTypeError),
+}
+
+#[derive(Debug)]
+pub struct MismatchTypeError {
+    value: Object,
+    expected_type: ObjectType,
+}
+
+impl MismatchTypeError {
+    pub fn new(value: Object, expected_type: ObjectType) -> Self {
+        Self {
+            value,
+            expected_type,
+        }
+    }
+}
+
+pub type Object = Rc<ObjectKind>;
 pub enum ObjectKind {
     Nil,
     Fixnum(isize),
@@ -13,8 +36,6 @@ pub enum ObjectKind {
     Cons(Cons),
     Func(fn(&[Object]) -> Result<Object, RuntimeError>),
 }
-
-pub type Object = Rc<ObjectKind>;
 
 #[derive(Debug)]
 pub struct Cons {
@@ -61,7 +82,6 @@ impl<'a> Iterator for ListIter<'a> {
     }
 }
 
-// constructor
 pub fn cons(car: Object, cdr: Object) -> Object {
     Rc::new(ObjectKind::Cons(Cons::new(
         Rc::clone(&car),
@@ -81,7 +101,6 @@ pub fn nil() -> Object {
     Rc::new(ObjectKind::Nil)
 }
 
-// display
 impl fmt::Display for ObjectKind {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
@@ -91,6 +110,12 @@ impl fmt::Display for ObjectKind {
             ObjectKind::Cons(cons) => cons.fmt(f),
             ObjectKind::Func(func) => write!(f, "<Fn {:p}>", &func),
         }
+    }
+}
+
+impl fmt::Debug for ObjectKind {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self)
     }
 }
 
@@ -113,10 +138,17 @@ impl fmt::Display for Cons {
     }
 }
 
-// debug
-impl fmt::Debug for ObjectKind {
+impl fmt::Display for RuntimeError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self)
+        use self::RuntimeError::*;
+        match self {
+            UnboundVariable(name) => write!(f, "Unbound variable: {}", name),
+            MismatchType(e) => write!(
+                f,
+                "The value {} is not of type {:?}",
+                e.value, e.expected_type
+            ),
+        }
     }
 }
 

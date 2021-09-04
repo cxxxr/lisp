@@ -19,7 +19,7 @@ fn main() {
             match lisp::reader::read_from_string(&input) {
                 Ok((obj, _pos)) => match lisp::eval::eval(obj) {
                     Ok(result) => println!("{}", result),
-                    Err(e) => unimplemented!(),
+                    Err(e) => println!("{}", e),
                 },
                 Err(e) => {
                     println!("error: {:?}", e);
