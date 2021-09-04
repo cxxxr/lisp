@@ -5,6 +5,7 @@ use std::rc::Rc;
 pub enum ObjectType {
     Number,
     Function,
+    Cons,
 }
 
 #[derive(Debug)]

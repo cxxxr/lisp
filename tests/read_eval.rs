@@ -38,4 +38,18 @@ fn read_eval() {
     });
 
     verify_eval("(cons 'a 'b)", cons(symbol("a"), symbol("b")));
+    assert!(match call_eval("(cons)") {
+        Err(RuntimeError::WrongNumArgs(0, 2)) => true,
+        _ => false,
+    });
+
+    verify_eval("(car (cons 1 2))", fixnum(1));
+    assert!(match call_eval("(car)") {
+        Err(RuntimeError::WrongNumArgs(0, 1)) => true,
+        _ => false,
+    });
+    assert!(match call_eval("(car 'a)") {
+        Err(RuntimeError::MismatchType(_, ObjectType::Cons)) => true,
+        _ => false,
+    });
 }

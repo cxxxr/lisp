@@ -93,10 +93,22 @@ fn cons(args: &[Object]) -> Result<Object, RuntimeError> {
     Ok(object::cons(Rc::clone(&args[0]), Rc::clone(&args[1])))
 }
 
+fn car(args: &[Object]) -> Result<Object, RuntimeError> {
+    check_num_args(args, 1)?;
+    match &*args[0] {
+        ObjectKind::Cons(cons) => Ok(Rc::clone(&cons.car)),
+        _ => Err(RuntimeError::MismatchType(
+            Rc::clone(&args[0]),
+            ObjectType::Cons,
+        )),
+    }
+}
+
 fn global_env() -> Env {
     let mut genv = Env::new();
     genv.set("+", Object::new(ObjectKind::Func(plus)));
     genv.set("cons", Object::new(ObjectKind::Func(cons)));
+    genv.set("car", Object::new(ObjectKind::Func(car)));
     genv
 }
 
