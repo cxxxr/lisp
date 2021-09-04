@@ -1,14 +1,14 @@
 use lisp::{
     env::Env,
     equal::equal,
-    eval::eval,
+    eval::{eval, EvalResult},
     object::{cons, fixnum, nil, symbol, Object, ObjectType, RuntimeError},
     reader::read_from_string,
 };
 
 extern crate lisp;
 
-fn call_eval(input: &str) -> Result<Object, RuntimeError> {
+fn call_eval(input: &str) -> EvalResult {
     let x = match read_from_string(input) {
         Ok((x, _)) => x,
         _ => unreachable!(),
@@ -16,17 +16,21 @@ fn call_eval(input: &str) -> Result<Object, RuntimeError> {
     eval(x, &mut Env::new())
 }
 
-fn verify_eval(input: &str, expected: Object) {
-    let actual = call_eval(input).unwrap();
+fn assert_eval(expected: Object, result: EvalResult) {
+    let actual = result.unwrap();
     assert!(equal(actual, expected));
+}
+
+fn verify_eval(expected: Object, input: &str) {
+    assert_eval(expected, call_eval(input));
 }
 
 #[test]
 fn atom_test() {
-    verify_eval("(atom? 1)", symbol("t"));
-    verify_eval("(atom? 'foo)", symbol("t"));
-    verify_eval("(atom? 'foo)", symbol("t"));
-    verify_eval("(atom? (cons 1 2))", nil());
+    verify_eval(symbol("t"), "(atom? 1)");
+    verify_eval(symbol("t"), "(atom? 'foo)");
+    verify_eval(symbol("t"), "(atom? 'foo)");
+    verify_eval(nil(), "(atom? (cons 1 2))");
     assert!(match call_eval("(atom?)") {
         Err(RuntimeError::WrongNumArgs(0, 1)) => true,
         _ => false,
@@ -35,10 +39,10 @@ fn atom_test() {
 
 #[test]
 fn add_test() {
-    verify_eval("(+)", fixnum(0));
-    verify_eval("(+ 1)", fixnum(1));
-    verify_eval("(+ 1 2)", fixnum(3));
-    verify_eval("(+ 1 2 3)", fixnum(6));
+    verify_eval(fixnum(0), "(+)");
+    verify_eval(fixnum(1), "(+ 1)");
+    verify_eval(fixnum(3), "(+ 1 2)");
+    verify_eval(fixnum(6), "(+ 1 2 3)");
     assert!(match call_eval("(+ 'a)") {
         Err(RuntimeError::MismatchType(_, ObjectType::Number)) => true,
         _ => false,
@@ -47,7 +51,7 @@ fn add_test() {
 
 #[test]
 fn quote_test() {
-    verify_eval("'a", symbol("a"));
+    verify_eval(symbol("a"), "'a");
     assert!(match call_eval("(quote)") {
         Err(RuntimeError::WrongNumArgs(0, 1)) => true,
         _ => false,
@@ -56,10 +60,10 @@ fn quote_test() {
 
 #[test]
 fn cons_test() {
-    verify_eval("(cons 'a 'b)", cons(symbol("a"), symbol("b")));
+    verify_eval(cons(symbol("a"), symbol("b")), "(cons 'a 'b)");
     verify_eval(
-        "(cons (cons 1 2) (cons 3 4))",
         cons(cons(fixnum(1), fixnum(2)), cons(fixnum(3), fixnum(4))),
+        "(cons (cons 1 2) (cons 3 4))",
     );
     assert!(match call_eval("(cons)") {
         Err(RuntimeError::WrongNumArgs(0, 2)) => true,
@@ -69,7 +73,7 @@ fn cons_test() {
 
 #[test]
 fn car_test() {
-    verify_eval("(car (cons 1 2))", fixnum(1));
+    verify_eval(fixnum(1), "(car (cons 1 2))");
     assert!(match call_eval("(car)") {
         Err(RuntimeError::WrongNumArgs(0, 1)) => true,
         _ => false,
@@ -82,7 +86,7 @@ fn car_test() {
 
 #[test]
 fn cdr_test() {
-    verify_eval("(cdr (cons 1 2))", fixnum(2));
+    verify_eval(fixnum(2), "(cdr (cons 1 2))");
     assert!(match call_eval("(cdr)") {
         Err(RuntimeError::WrongNumArgs(0, 1)) => true,
         _ => false,
@@ -95,9 +99,9 @@ fn cdr_test() {
 
 #[test]
 fn if_test() {
-    verify_eval("(if (equal 1 1) 'true 'false)", symbol("true"));
-    verify_eval("(if (equal 1 2) 'true 'false)", symbol("false"));
-    verify_eval("(if (equal 1 2) 'true)", nil());
+    verify_eval(symbol("true"), "(if (equal 1 1) 'true 'false)");
+    verify_eval(symbol("false"), "(if (equal 1 2) 'true 'false)");
+    verify_eval(nil(), "(if (equal 1 2) 'true)");
     assert!(match call_eval("(if)") {
         Err(RuntimeError::TooFewArguments(0, 2)) => true,
         _ => false,
