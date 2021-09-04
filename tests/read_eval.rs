@@ -1,21 +1,22 @@
 use lisp::{
     equal::equal,
     eval::eval,
-    object::{fixnum, Object},
+    object::{fixnum, Object, RuntimeError},
     reader::read_from_string,
 };
 
 extern crate lisp;
 
-fn verify_eval(input: &str, expected: Object) {
+fn call_eval(input: &str) -> Result<Object, RuntimeError> {
     let x = match read_from_string(input) {
         Ok((x, _)) => x,
         _ => unreachable!(),
     };
-    let actual = match eval(x) {
-        Ok(actual) => actual,
-        _ => unreachable!(),
-    };
+    eval(x)
+}
+
+fn verify_eval(input: &str, expected: Object) {
+    let actual = call_eval(input).unwrap();
     assert!(equal(actual, expected));
 }
 
