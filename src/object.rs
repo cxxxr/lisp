@@ -1,7 +1,7 @@
 use core::fmt;
 use std::rc::Rc;
 
-pub enum Error {
+pub enum RuntimeError {
     UnboundVariable(String),
     MismatchType(Object),
 }
@@ -11,7 +11,7 @@ pub enum ObjectKind {
     Fixnum(isize),
     Symbol(String),
     Cons(Cons),
-    Func(fn(&[Object]) -> Result<Object, Error>),
+    Func(fn(&[Object]) -> Result<Object, RuntimeError>),
 }
 
 pub type Object = Rc<ObjectKind>;

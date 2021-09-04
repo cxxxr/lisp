@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::rc::Rc;
 
-use super::object::{self, Cons, Error, Object, ObjectKind};
+use super::object::{self, Cons, RuntimeError, Object, ObjectKind};
 
 struct Env {
     parent: Option<Box<Env>>,
@@ -28,17 +28,17 @@ impl Env {
     }
 }
 
-fn eval_internal(x: Object, env: &mut Env) -> Result<Object, Error> {
+fn eval_internal(x: Object, env: &mut Env) -> Result<Object, RuntimeError> {
     match &*x {
         ObjectKind::Nil | ObjectKind::Fixnum(_) | ObjectKind::Func(_) => Ok(x),
-        ObjectKind::Symbol(s) => env.get(s).ok_or(Error::UnboundVariable(s.to_string())),
+        ObjectKind::Symbol(s) => env.get(s).ok_or(RuntimeError::UnboundVariable(s.to_string())),
         ObjectKind::Cons(list) => {
             let mut iter = list.iter();
             let first = iter.next().unwrap();
             let first = eval_internal(first, env)?;
             let func = match &*first {
                 ObjectKind::Func(func) => func,
-                _ => return Err(Error::MismatchType(first)),
+                _ => return Err(RuntimeError::MismatchType(first)),
             };
             let mut args = Vec::new();
             for arg in iter {
@@ -49,7 +49,7 @@ fn eval_internal(x: Object, env: &mut Env) -> Result<Object, Error> {
     }
 }
 
-fn plus(args: &[Object]) -> Result<Object, Error> {
+fn plus(args: &[Object]) -> Result<Object, RuntimeError> {
     let mut acc = 0;
     for arg in args {
         match **arg {
@@ -68,7 +68,7 @@ fn global_env() -> Env {
     genv
 }
 
-pub fn eval(x: Object) -> Result<Object, Error> {
+pub fn eval(x: Object) -> Result<Object, RuntimeError> {
     let mut e = global_env();
     eval_internal(x, &mut e)
 }
