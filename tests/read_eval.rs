@@ -52,4 +52,14 @@ fn read_eval() {
         Err(RuntimeError::MismatchType(_, ObjectType::Cons)) => true,
         _ => false,
     });
+
+    verify_eval("(cdr (cons 1 2))", fixnum(2));
+    assert!(match call_eval("(cdr)") {
+        Err(RuntimeError::WrongNumArgs(0, 1)) => true,
+        _ => false,
+    });
+    assert!(match call_eval("(cdr 'a)") {
+        Err(RuntimeError::MismatchType(_, ObjectType::Cons)) => true,
+        _ => false,
+    });
 }

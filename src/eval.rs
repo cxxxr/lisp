@@ -93,10 +93,13 @@ fn cons(args: &[Object]) -> Result<Object, RuntimeError> {
     Ok(object::cons(Rc::clone(&args[0]), Rc::clone(&args[1])))
 }
 
-fn car(args: &[Object]) -> Result<Object, RuntimeError> {
+fn cxr<F>(args: &[Object], accessor: F) -> Result<Object, RuntimeError>
+where
+    F: Fn(&object::Cons) -> Object,
+{
     check_num_args(args, 1)?;
     match &*args[0] {
-        ObjectKind::Cons(cons) => Ok(Rc::clone(&cons.car)),
+        ObjectKind::Cons(cons) => Ok(accessor(cons)),
         _ => Err(RuntimeError::MismatchType(
             Rc::clone(&args[0]),
             ObjectType::Cons,
@@ -104,11 +107,20 @@ fn car(args: &[Object]) -> Result<Object, RuntimeError> {
     }
 }
 
+fn car(args: &[Object]) -> Result<Object, RuntimeError> {
+    cxr(args, |cons| Rc::clone(&cons.car))
+}
+
+fn cdr(args: &[Object]) -> Result<Object, RuntimeError> {
+    cxr(args, |cons| Rc::clone(&cons.cdr))
+}
+
 fn global_env() -> Env {
     let mut genv = Env::new();
     genv.set("+", Object::new(ObjectKind::Func(plus)));
     genv.set("cons", Object::new(ObjectKind::Func(cons)));
     genv.set("car", Object::new(ObjectKind::Func(car)));
+    genv.set("cdr", Object::new(ObjectKind::Func(cdr)));
     genv
 }
 
