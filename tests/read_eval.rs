@@ -8,12 +8,16 @@ use lisp::{
 
 extern crate lisp;
 
-fn call_eval(input: &str) -> EvalResult {
+fn call_eval_with_env(input: &str, env: &mut Env) -> EvalResult {
     let x = match read_from_string(input) {
         Ok((x, _)) => x,
         _ => unreachable!(),
     };
-    eval(x, &mut Env::new())
+    eval(x, env)
+}
+
+fn call_eval(input: &str) -> EvalResult {
+    call_eval_with_env(input, &mut Env::new())
 }
 
 fn assert_eval(expected: Object, result: EvalResult) {
@@ -23,6 +27,10 @@ fn assert_eval(expected: Object, result: EvalResult) {
 
 fn verify_eval(expected: Object, input: &str) {
     assert_eval(expected, call_eval(input));
+}
+
+fn verify_eval_with_env(expected: Object, input: &str, env: &mut Env) {
+    assert_eval(expected, call_eval_with_env(input, env));
 }
 
 #[test]
@@ -114,4 +122,11 @@ fn if_test() {
         Err(RuntimeError::TooManyArguments(4, 3)) => true,
         _ => false,
     });
+}
+
+#[test]
+fn define_test() {
+    let mut env = Env::new();
+    verify_eval_with_env(fixnum(1), "(define x 1)", &mut env);
+    verify_eval_with_env(fixnum(2), "(define x (+ x 1))", &mut env);
 }
