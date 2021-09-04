@@ -72,7 +72,7 @@ fn plus(args: &[Object]) -> Result<Object, RuntimeError> {
             ObjectKind::Fixnum(n) => {
                 acc += n;
             }
-            _ => (),
+            _ => return Err(RuntimeError::MismatchType(Rc::clone(arg), ObjectType::Number)),
         }
     }
     Ok(object::fixnum(acc))
