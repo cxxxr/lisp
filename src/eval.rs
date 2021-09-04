@@ -46,14 +46,12 @@ fn check_num_args_range(args: &[Object], min: usize, max: usize) -> Result<(), R
     Ok(())
 }
 
-fn eval_quote(iter: object::ListIter) -> Result<Object, RuntimeError> {
-    let args: Vec<Object> = iter.collect();
+fn eval_quote(args: &[Object]) -> Result<Object, RuntimeError> {
     check_num_args(&args, 1)?;
     return Ok(Rc::clone(&args[0]));
 }
 
-fn eval_if(iter: object::ListIter, env: &mut Env) -> Result<Object, RuntimeError> {
-    let args: Vec<Object> = iter.collect();
+fn eval_if(args: &[Object], env: &mut Env) -> Result<Object, RuntimeError> {
     check_num_args_range(&args, 2, 3)?;
     match &*eval_internal(Rc::clone(&args[0]), env)? {
         ObjectKind::Nil => match args.get(2) {
@@ -93,8 +91,14 @@ fn eval_internal(x: Object, env: &mut Env) -> Result<Object, RuntimeError> {
 
             if let ObjectKind::Symbol(name) = &*first {
                 match &**name {
-                    "quote" => return eval_quote(iter),
-                    "if" => return eval_if(iter, env),
+                    "quote" => {
+                        let args: Vec<Object> = iter.collect();
+                        return eval_quote(&args);
+                    }
+                    "if" => {
+                        let args: Vec<Object> = iter.collect();
+                        return eval_if(&args, env);
+                    }
                     _ => (),
                 }
             }
