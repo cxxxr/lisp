@@ -1,33 +1,8 @@
-use std::collections::HashMap;
 use std::rc::Rc;
 
 use super::equal;
 use super::object::{self, Object, ObjectKind, ObjectType, RuntimeError};
-
-struct Env {
-    parent: Option<Box<Env>>,
-    table: HashMap<String, Object>,
-}
-
-impl Env {
-    fn new() -> Self {
-        Self {
-            parent: None,
-            table: HashMap::new(),
-        }
-    }
-
-    fn set(&mut self, name: &str, value: Object) {
-        self.table.insert(name.to_string(), value);
-    }
-
-    fn get(&self, name: &str) -> Option<Object> {
-        match self.table.get(name) {
-            None => None,
-            Some(v) => Some(Rc::clone(v)),
-        }
-    }
-}
+use super::env::Env;
 
 fn check_num_args(args: &[Object], expected: usize) -> Result<(), RuntimeError> {
     if args.len() != expected {
@@ -60,6 +35,21 @@ fn eval_if(args: &[Object], env: &mut Env) -> Result<Object, RuntimeError> {
         },
         _ => eval_internal(Rc::clone(&args[1]), env),
     }
+}
+
+fn eval_define(args: &[Object], env: &mut Env) -> Result<Object, RuntimeError> {
+    check_num_args(&args, 2)?;
+    let var = Rc::clone(&args[0]);
+    let value = Rc::clone(&args[1]);
+
+    let name = match &*var {
+        ObjectKind::Symbol(name) => name,
+        _ => return Err(RuntimeError::MismatchType(var, ObjectType::Symbol)),
+    };
+
+    let value = eval_internal(value, env)?;
+    env.set(name, Rc::clone(&value));
+    Ok(value)
 }
 
 fn eval_function(
@@ -98,6 +88,10 @@ fn eval_internal(x: Object, env: &mut Env) -> Result<Object, RuntimeError> {
                     "if" => {
                         let args: Vec<Object> = iter.collect();
                         return eval_if(&args, env);
+                    }
+                    "define" => {
+                        let args: Vec<Object> = iter.collect();
+                        return eval_define(&args, env);
                     }
                     _ => (),
                 }
@@ -169,18 +163,17 @@ fn equal(args: &[Object]) -> Result<Object, RuntimeError> {
     }
 }
 
-fn global_env() -> Env {
-    let mut genv = Env::new();
-    genv.set("+", Object::new(ObjectKind::Func(plus)));
-    genv.set("atom?", Object::new(ObjectKind::Func(is_atom)));
-    genv.set("cons", Object::new(ObjectKind::Func(cons)));
-    genv.set("car", Object::new(ObjectKind::Func(car)));
-    genv.set("cdr", Object::new(ObjectKind::Func(cdr)));
-    genv.set("equal", Object::new(ObjectKind::Func(equal)));
-    genv
+impl Env {
+    pub fn init(&mut self) {
+        self.set("+", Object::new(ObjectKind::Func(plus)));
+        self.set("atom?", Object::new(ObjectKind::Func(is_atom)));
+        self.set("cons", Object::new(ObjectKind::Func(cons)));
+        self.set("car", Object::new(ObjectKind::Func(car)));
+        self.set("cdr", Object::new(ObjectKind::Func(cdr)));
+        self.set("equal", Object::new(ObjectKind::Func(equal)));
+    }
 }
 
-pub fn eval(x: Object) -> Result<Object, RuntimeError> {
-    let mut e = global_env();
-    eval_internal(x, &mut e)
+pub fn eval(x: Object, env: &mut Env) -> Result<Object, RuntimeError> {
+    eval_internal(x, env)
 }

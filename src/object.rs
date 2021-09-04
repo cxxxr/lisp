@@ -6,6 +6,7 @@ pub enum ObjectType {
     Number,
     Function,
     Cons,
+    Symbol,
 }
 
 #[derive(Debug)]

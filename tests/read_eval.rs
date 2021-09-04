@@ -1,4 +1,5 @@
 use lisp::{
+    env::Env,
     equal::equal,
     eval::eval,
     object::{cons, fixnum, nil, symbol, Object, ObjectType, RuntimeError},
@@ -12,7 +13,7 @@ fn call_eval(input: &str) -> Result<Object, RuntimeError> {
         Ok((x, _)) => x,
         _ => unreachable!(),
     };
-    eval(x)
+    eval(x, &mut Env::new())
 }
 
 fn verify_eval(input: &str, expected: Object) {
