@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::rc::Rc;
 
+use super::equal;
 use super::object::{self, Object, ObjectKind, ObjectType, RuntimeError};
 
 struct Env {
@@ -115,12 +116,22 @@ fn cdr(args: &[Object]) -> Result<Object, RuntimeError> {
     cxr(args, |cons| Rc::clone(&cons.cdr))
 }
 
+fn equal(args: &[Object]) -> Result<Object, RuntimeError> {
+    check_num_args(args, 2)?;
+    Ok(if equal::equal(Rc::clone(&args[0]), Rc::clone(&args[1])) {
+        object::symbol("t")
+    } else {
+        object::nil()
+    })
+}
+
 fn global_env() -> Env {
     let mut genv = Env::new();
     genv.set("+", Object::new(ObjectKind::Func(plus)));
     genv.set("cons", Object::new(ObjectKind::Func(cons)));
     genv.set("car", Object::new(ObjectKind::Func(car)));
     genv.set("cdr", Object::new(ObjectKind::Func(cdr)));
+    genv.set("equal", Object::new(ObjectKind::Func(equal)));
     genv
 }
 
