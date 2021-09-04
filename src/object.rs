@@ -11,6 +11,7 @@ pub enum ObjectType {
 pub enum RuntimeError {
     UnboundVariable(String),
     MismatchType(MismatchTypeError),
+    WrongNumArgs(usize, usize),
 }
 
 #[derive(Debug)]
@@ -147,6 +148,11 @@ impl fmt::Display for RuntimeError {
                 f,
                 "The value {} is not of type {:?}",
                 e.value, e.expected_type
+            ),
+            WrongNumArgs(actual, expected) => write!(
+                f,
+                "Wrong number of arguments: expected = {}, actual = {}",
+                expected, actual
             ),
         }
     }
