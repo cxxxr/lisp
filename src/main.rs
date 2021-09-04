@@ -1,4 +1,3 @@
-mod lisp;
 use std::io::{self, stdin, stdout, BufRead, BufReader, Write};
 
 fn prompt(s: &str) -> io::Result<()> {
