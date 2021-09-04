@@ -21,7 +21,7 @@ fn verify_eval(input: &str, expected: Object) {
 }
 
 #[test]
-fn read_eval() {
+fn add_test() {
     verify_eval("(+)", fixnum(0));
     verify_eval("(+ 1)", fixnum(1));
     verify_eval("(+ 1 2)", fixnum(3));
@@ -30,13 +30,19 @@ fn read_eval() {
         Err(RuntimeError::MismatchType(_, ObjectType::Number)) => true,
         _ => false,
     });
+}
 
+#[test]
+fn quote_test() {
     verify_eval("'a", symbol("a"));
     assert!(match call_eval("(quote)") {
         Err(RuntimeError::WrongNumArgs(0, 1)) => true,
         _ => false,
     });
+}
 
+#[test]
+fn cons_test() {
     verify_eval("(cons 'a 'b)", cons(symbol("a"), symbol("b")));
     verify_eval(
         "(cons (cons 1 2) (cons 3 4))",
@@ -46,7 +52,10 @@ fn read_eval() {
         Err(RuntimeError::WrongNumArgs(0, 2)) => true,
         _ => false,
     });
+}
 
+#[test]
+fn car_test() {
     verify_eval("(car (cons 1 2))", fixnum(1));
     assert!(match call_eval("(car)") {
         Err(RuntimeError::WrongNumArgs(0, 1)) => true,
@@ -56,7 +65,10 @@ fn read_eval() {
         Err(RuntimeError::MismatchType(_, ObjectType::Cons)) => true,
         _ => false,
     });
+}
 
+#[test]
+fn cdr_test() {
     verify_eval("(cdr (cons 1 2))", fixnum(2));
     assert!(match call_eval("(cdr)") {
         Err(RuntimeError::WrongNumArgs(0, 1)) => true,
