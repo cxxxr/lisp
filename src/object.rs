@@ -16,6 +16,7 @@ pub enum ObjectKind {
 
 pub type Object = Rc<ObjectKind>;
 
+#[derive(Debug)]
 pub struct Cons {
     pub car: Object,
     pub cdr: Object,
@@ -80,7 +81,7 @@ pub fn nil() -> Object {
     Rc::new(ObjectKind::Nil)
 }
 
-// printer
+// display
 impl fmt::Display for ObjectKind {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
@@ -109,6 +110,13 @@ impl fmt::Display for Cons {
                 cdr => break write!(f, " . {})", cdr),
             }
         }
+    }
+}
+
+// debug
+impl fmt::Debug for ObjectKind {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self)
     }
 }
 
