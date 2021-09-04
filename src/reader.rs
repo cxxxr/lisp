@@ -34,8 +34,15 @@ fn vec_to_cons(mut vec: Vec<object::Object>, last: object::Object) -> object::Ob
     head
 }
 
-fn read_cons(input: &[u8], mut pos: usize) -> ReadResult {
+fn read_list(input: &[u8], mut pos: usize) -> ReadResult {
     let mut list = Vec::<object::Object>::new();
+
+    pos = skip_spaces(input, pos);
+    match peek_char(input, pos)? {
+        b')' => return Ok((object::nil(), pos)),
+        _ => (),
+    }
+
     let last = loop {
         let (obj, end) = read_ahead(input, pos)?;
         pos = skip_spaces(input, end);
@@ -50,7 +57,7 @@ fn read_cons(input: &[u8], mut pos: usize) -> ReadResult {
                         return Err(ReadError::UnexpectedChar(
                             b as char, // TODO: multibyte char
                             ')',
-                        ))
+                        ));
                     }
                 }
             }
@@ -96,7 +103,7 @@ fn read_ahead(input: &[u8], mut pos: usize) -> ReadResult {
     }
 
     match input[pos] {
-        b'(' => read_cons(input, pos + 1),
+        b'(' => read_list(input, pos + 1),
         b')' => return Err(ReadError::UnmatchedClosedParen),
         b'\'' => read_quote(input, pos + 1),
         _ => read_atom(input, pos),
