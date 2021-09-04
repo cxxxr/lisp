@@ -114,3 +114,41 @@ pub fn read_from_string(input: &str) -> ReadResult {
     let input = input.as_bytes();
     read_ahead(input, 0)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::super::equal::equal;
+    use super::super::object::*;
+    use super::read_from_string;
+
+    fn verify(input: &str, expected: Object) {
+        assert!(match read_from_string(input) {
+            Ok((x, _)) => equal(x, expected),
+            _ => false,
+        });
+    }
+
+    #[test]
+    fn test() {
+        verify("a", symbol("a"));
+        verify("  a", symbol("a"));
+        verify("123", fixnum(123));
+        verify("-123", fixnum(-123));
+        verify("+123", fixnum(123));
+        verify("()", nil());
+        verify("(+)", cons(symbol("+"), nil()));
+        verify(
+            "(a b c)",
+            cons(symbol("a"), cons(symbol("b"), cons(symbol("c"), nil()))),
+        );
+        verify("(a . b)", cons(symbol("a"), symbol("b")));
+        verify("'foo", cons(symbol("quote"), cons(symbol("foo"), nil())));
+        verify(
+            "'(a b)",
+            cons(
+                symbol("quote"),
+                cons(cons(symbol("a"), cons(symbol("b"), nil())), nil()),
+            ),
+        );
+    }
+}
