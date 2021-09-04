@@ -10,23 +10,8 @@ pub enum ObjectType {
 #[derive(Debug)]
 pub enum RuntimeError {
     UnboundVariable(String),
-    MismatchType(MismatchTypeError),
+    MismatchType(Object, ObjectType),
     WrongNumArgs(usize, usize),
-}
-
-#[derive(Debug)]
-pub struct MismatchTypeError {
-    value: Object,
-    expected_type: ObjectType,
-}
-
-impl MismatchTypeError {
-    pub fn new(value: Object, expected_type: ObjectType) -> Self {
-        Self {
-            value,
-            expected_type,
-        }
-    }
 }
 
 pub type Object = Rc<ObjectKind>;
@@ -144,11 +129,9 @@ impl fmt::Display for RuntimeError {
         use self::RuntimeError::*;
         match self {
             UnboundVariable(name) => write!(f, "Unbound variable: {}", name),
-            MismatchType(e) => write!(
-                f,
-                "The value {} is not of type {:?}",
-                e.value, e.expected_type
-            ),
+            MismatchType(value, expected_type) => {
+                write!(f, "The value {} is not of type {:?}", value, expected_type)
+            }
             WrongNumArgs(actual, expected) => write!(
                 f,
                 "Wrong number of arguments: expected = {}, actual = {}",

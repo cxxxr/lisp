@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::rc::Rc;
 
-use super::object::{self, MismatchTypeError, Object, ObjectKind, ObjectType, RuntimeError};
+use super::object::{self, Object, ObjectKind, ObjectType, RuntimeError};
 
 struct Env {
     parent: Option<Box<Env>>,
@@ -45,8 +45,8 @@ fn eval_internal(x: Object, env: &mut Env) -> Result<Object, RuntimeError> {
                         if args.len() != 1 {
                             return Err(RuntimeError::WrongNumArgs(args.len(), 1));
                         }
-                        return Ok(Rc::clone(&args[0]))
-                    },
+                        return Ok(Rc::clone(&args[0]));
+                    }
                     _ => (),
                 }
             }
@@ -54,12 +54,7 @@ fn eval_internal(x: Object, env: &mut Env) -> Result<Object, RuntimeError> {
             let first = eval_internal(first, env)?;
             let func = match &*first {
                 ObjectKind::Func(func) => func,
-                _ => {
-                    return Err(RuntimeError::MismatchType(MismatchTypeError::new(
-                        first,
-                        ObjectType::Function,
-                    )))
-                }
+                _ => return Err(RuntimeError::MismatchType(first, ObjectType::Function)),
             };
             let mut args = Vec::new();
             for arg in iter {
