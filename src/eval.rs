@@ -1,8 +1,10 @@
 use std::rc::Rc;
 
+use super::env::Env;
 use super::equal;
 use super::object::{self, Object, ObjectKind, ObjectType, RuntimeError};
-use super::env::Env;
+
+pub type EvalResult = Result<Object, RuntimeError>;
 
 fn check_num_args(args: &[Object], expected: usize) -> Result<(), RuntimeError> {
     if args.len() != expected {
@@ -21,12 +23,12 @@ fn check_num_args_range(args: &[Object], min: usize, max: usize) -> Result<(), R
     Ok(())
 }
 
-fn eval_quote(args: &[Object]) -> Result<Object, RuntimeError> {
+fn eval_quote(args: &[Object]) -> EvalResult {
     check_num_args(&args, 1)?;
     return Ok(Rc::clone(&args[0]));
 }
 
-fn eval_if(args: &[Object], env: &mut Env) -> Result<Object, RuntimeError> {
+fn eval_if(args: &[Object], env: &mut Env) -> EvalResult {
     check_num_args_range(&args, 2, 3)?;
     match &*eval_internal(Rc::clone(&args[0]), env)? {
         ObjectKind::Nil => match args.get(2) {
@@ -37,7 +39,7 @@ fn eval_if(args: &[Object], env: &mut Env) -> Result<Object, RuntimeError> {
     }
 }
 
-fn eval_define(args: &[Object], env: &mut Env) -> Result<Object, RuntimeError> {
+fn eval_define(args: &[Object], env: &mut Env) -> EvalResult {
     check_num_args(&args, 2)?;
     let var = Rc::clone(&args[0]);
     let value = Rc::clone(&args[1]);
@@ -52,11 +54,7 @@ fn eval_define(args: &[Object], env: &mut Env) -> Result<Object, RuntimeError> {
     Ok(value)
 }
 
-fn eval_function(
-    first: Object,
-    iter: object::ListIter,
-    env: &mut Env,
-) -> Result<Object, RuntimeError> {
+fn eval_function(first: Object, iter: object::ListIter, env: &mut Env) -> EvalResult {
     let first = eval_internal(first, env)?;
     let func = match &*first {
         ObjectKind::Func(func) => func,
@@ -69,7 +67,7 @@ fn eval_function(
     func(&args)
 }
 
-fn eval_internal(x: Object, env: &mut Env) -> Result<Object, RuntimeError> {
+fn eval_internal(x: Object, env: &mut Env) -> EvalResult {
     match &*x {
         ObjectKind::Nil | ObjectKind::Fixnum(_) | ObjectKind::Func(_) => Ok(x),
         ObjectKind::Symbol(s) => env
@@ -101,7 +99,7 @@ fn eval_internal(x: Object, env: &mut Env) -> Result<Object, RuntimeError> {
     }
 }
 
-fn plus(args: &[Object]) -> Result<Object, RuntimeError> {
+fn plus(args: &[Object]) -> EvalResult {
     let mut acc = 0;
     for arg in args {
         match **arg {
@@ -119,7 +117,7 @@ fn plus(args: &[Object]) -> Result<Object, RuntimeError> {
     Ok(object::fixnum(acc))
 }
 
-fn is_atom(args: &[Object]) -> Result<Object, RuntimeError> {
+fn is_atom(args: &[Object]) -> EvalResult {
     check_num_args(args, 1)?;
     match &*args[0] {
         ObjectKind::Cons(_) => Ok(object::nil()),
@@ -127,12 +125,12 @@ fn is_atom(args: &[Object]) -> Result<Object, RuntimeError> {
     }
 }
 
-fn cons(args: &[Object]) -> Result<Object, RuntimeError> {
+fn cons(args: &[Object]) -> EvalResult {
     check_num_args(args, 2)?;
     Ok(object::cons(Rc::clone(&args[0]), Rc::clone(&args[1])))
 }
 
-fn cxr<F>(args: &[Object], accessor: F) -> Result<Object, RuntimeError>
+fn cxr<F>(args: &[Object], accessor: F) -> EvalResult
 where
     F: Fn(&object::Cons) -> Object,
 {
@@ -146,15 +144,15 @@ where
     }
 }
 
-fn car(args: &[Object]) -> Result<Object, RuntimeError> {
+fn car(args: &[Object]) -> EvalResult {
     cxr(args, |cons| Rc::clone(&cons.car))
 }
 
-fn cdr(args: &[Object]) -> Result<Object, RuntimeError> {
+fn cdr(args: &[Object]) -> EvalResult {
     cxr(args, |cons| Rc::clone(&cons.cdr))
 }
 
-fn equal(args: &[Object]) -> Result<Object, RuntimeError> {
+fn equal(args: &[Object]) -> EvalResult {
     check_num_args(args, 2)?;
     if equal::equal(Rc::clone(&args[0]), Rc::clone(&args[1])) {
         Ok(object::symbol("t"))
@@ -174,6 +172,6 @@ impl Env {
     }
 }
 
-pub fn eval(x: Object, env: &mut Env) -> Result<Object, RuntimeError> {
+pub fn eval(x: Object, env: &mut Env) -> EvalResult {
     eval_internal(x, env)
 }
