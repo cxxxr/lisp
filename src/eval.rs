@@ -37,6 +37,20 @@ fn eval_internal(x: Object, env: &mut Env) -> Result<Object, RuntimeError> {
         ObjectKind::Cons(list) => {
             let mut iter = list.iter();
             let first = iter.next().unwrap();
+
+            if let ObjectKind::Symbol(name) = &*first {
+                match &**name {
+                    "quote" => {
+                        let args: Vec<Object> = iter.collect();
+                        if args.len() != 1 {
+                            return Err(RuntimeError::WrongNumArgs(args.len(), 1));
+                        }
+                        return Ok(Rc::clone(&args[0]))
+                    },
+                    _ => (),
+                }
+            }
+
             let first = eval_internal(first, env)?;
             let func = match &*first {
                 ObjectKind::Func(func) => func,
