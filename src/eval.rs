@@ -46,6 +46,41 @@ fn check_num_args_range(args: &[Object], min: usize, max: usize) -> Result<(), R
     Ok(())
 }
 
+fn eval_quote(iter: object::ListIter) -> Result<Object, RuntimeError> {
+    let args: Vec<Object> = iter.collect();
+    check_num_args(&args, 1)?;
+    return Ok(Rc::clone(&args[0]));
+}
+
+fn eval_if(iter: object::ListIter, env: &mut Env) -> Result<Object, RuntimeError> {
+    let args: Vec<Object> = iter.collect();
+    check_num_args_range(&args, 2, 3)?;
+    return match &*eval_internal(Rc::clone(&args[0]), env)? {
+        ObjectKind::Nil => match args.get(2) {
+            Some(x) => eval_internal(Rc::clone(x), env),
+            None => Ok(object::nil()),
+        },
+        _ => eval_internal(Rc::clone(&args[1]), env),
+    };
+}
+
+fn eval_function(
+    first: Object,
+    iter: object::ListIter,
+    env: &mut Env,
+) -> Result<Object, RuntimeError> {
+    let first = eval_internal(first, env)?;
+    let func = match &*first {
+        ObjectKind::Func(func) => func,
+        _ => return Err(RuntimeError::MismatchType(first, ObjectType::Function)),
+    };
+    let mut args = Vec::new();
+    for arg in iter {
+        args.push(eval_internal(arg, env)?);
+    }
+    func(&args)
+}
+
 fn eval_internal(x: Object, env: &mut Env) -> Result<Object, RuntimeError> {
     match &*x {
         ObjectKind::Nil | ObjectKind::Fixnum(_) | ObjectKind::Func(_) => Ok(x),
@@ -58,36 +93,12 @@ fn eval_internal(x: Object, env: &mut Env) -> Result<Object, RuntimeError> {
 
             if let ObjectKind::Symbol(name) = &*first {
                 match &**name {
-                    "quote" => {
-                        let args: Vec<Object> = iter.collect();
-                        check_num_args(&args, 1)?;
-                        return Ok(Rc::clone(&args[0]));
-                    }
-                    "if" => {
-                        let args: Vec<Object> = iter.collect();
-                        check_num_args_range(&args, 2, 3)?;
-                        return match &*eval_internal(Rc::clone(&args[0]), env)? {
-                            ObjectKind::Nil => match args.get(2) {
-                                Some(x) => eval_internal(Rc::clone(x), env),
-                                None => Ok(object::nil()),
-                            },
-                            _ => eval_internal(Rc::clone(&args[1]), env),
-                        };
-                    }
+                    "quote" => return eval_quote(iter),
+                    "if" => return eval_if(iter, env),
                     _ => (),
                 }
             }
-
-            let first = eval_internal(first, env)?;
-            let func = match &*first {
-                ObjectKind::Func(func) => func,
-                _ => return Err(RuntimeError::MismatchType(first, ObjectType::Function)),
-            };
-            let mut args = Vec::new();
-            for arg in iter {
-                args.push(eval_internal(arg, env)?);
-            }
-            func(&args)
+            eval_function(first, iter, env)
         }
     }
 }
