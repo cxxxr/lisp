@@ -74,9 +74,6 @@ mod tests {
             cons(fixnum(3), fixnum(2)),
         ));
 
-        assert!(!equal(
-            cons(symbol("+"), nil()),
-            fixnum(100)
-        ));
+        assert!(!equal(cons(symbol("+"), nil()), fixnum(100)));
     }
 }
