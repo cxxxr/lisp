@@ -65,7 +65,7 @@ fn read_list(input: &[u8], mut pos: usize) -> ReadResult {
             _ => (),
         }
     };
-    Ok((vec_to_cons(list, last), pos))
+    Ok((vec_to_cons(list, last), pos + 1))
 }
 
 fn is_delimiter(b: u8) -> bool {

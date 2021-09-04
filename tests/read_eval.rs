@@ -38,6 +38,10 @@ fn read_eval() {
     });
 
     verify_eval("(cons 'a 'b)", cons(symbol("a"), symbol("b")));
+    verify_eval(
+        "(cons (cons 1 2) (cons 3 4))",
+        cons(cons(fixnum(1), fixnum(2)), cons(fixnum(3), fixnum(4))),
+    );
     assert!(match call_eval("(cons)") {
         Err(RuntimeError::WrongNumArgs(0, 2)) => true,
         _ => false,
