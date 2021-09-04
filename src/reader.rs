@@ -1,4 +1,5 @@
 use super::object;
+use core::fmt;
 use std::str::from_utf8;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
@@ -6,6 +7,21 @@ pub enum ReadError {
     EndOfFile,
     UnmatchedClosedParen,
     UnexpectedChar(char, char),
+}
+
+impl fmt::Display for ReadError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        use self::ReadError::*;
+        match self {
+            EndOfFile => write!(f, "End of file"),
+            UnmatchedClosedParen => write!(f, "Unmatched closed parenthesis"),
+            UnexpectedChar(actual, expected) => write!(
+                f,
+                "Expecting character {:?}, but it's character {:?}",
+                expected, actual
+            ),
+        }
+    }
 }
 
 type ReadResult = Result<(object::Object, usize), ReadError>;

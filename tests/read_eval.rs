@@ -1,7 +1,7 @@
 use lisp::{
     equal::equal,
     eval::eval,
-    object::{cons, fixnum, nil, symbol, Object, ObjectType, RuntimeError},
+    object::{cons, fixnum, symbol, Object, ObjectType, RuntimeError},
     reader::read_from_string,
 };
 

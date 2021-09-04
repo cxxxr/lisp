@@ -22,7 +22,7 @@ fn main() {
                     Err(e) => println!("{}", e),
                 },
                 Err(e) => {
-                    println!("error: {:?}", e);
+                    println!("{}", e);
                 }
             }
         }
