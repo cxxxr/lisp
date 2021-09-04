@@ -13,6 +13,8 @@ pub enum RuntimeError {
     UnboundVariable(String),
     MismatchType(Object, ObjectType),
     WrongNumArgs(usize, usize),
+    TooFewArguments(usize, usize),
+    TooManyArguments(usize, usize),
 }
 
 pub type Object = Rc<ObjectKind>;
@@ -140,6 +142,16 @@ impl fmt::Display for RuntimeError {
                 f,
                 "Wrong number of arguments: expected = {}, actual = {}",
                 expected, actual
+            ),
+            TooFewArguments(actual, min) => write!(
+                f,
+                "Too few arguments ({} arguments provided, at least {} required)",
+                actual, min
+            ),
+            TooManyArguments(actual, max) => write!(
+                f,
+                "Too many arguments ({} arguments provided, at most {} required)",
+                actual, max
             ),
         }
     }

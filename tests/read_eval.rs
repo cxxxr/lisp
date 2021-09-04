@@ -1,7 +1,7 @@
 use lisp::{
     equal::equal,
     eval::eval,
-    object::{cons, fixnum, symbol, Object, ObjectType, RuntimeError},
+    object::{cons, fixnum, nil, symbol, Object, ObjectType, RuntimeError},
     reader::read_from_string,
 };
 
@@ -76,6 +76,25 @@ fn cdr_test() {
     });
     assert!(match call_eval("(cdr 'a)") {
         Err(RuntimeError::MismatchType(_, ObjectType::Cons)) => true,
+        _ => false,
+    });
+}
+
+#[test]
+fn if_test() {
+    verify_eval("(if (equal 1 1) 'true 'false)", symbol("true"));
+    verify_eval("(if (equal 1 2) 'true 'false)", symbol("false"));
+    verify_eval("(if (equal 1 2) 'true)", nil());
+    assert!(match call_eval("(if)") {
+        Err(RuntimeError::TooFewArguments(0, 2)) => true,
+        _ => false,
+    });
+    assert!(match call_eval("(if x)") {
+        Err(RuntimeError::TooFewArguments(1, 2)) => true,
+        _ => false,
+    });
+    assert!(match call_eval("(if test then else extra)") {
+        Err(RuntimeError::TooManyArguments(4, 3)) => true,
         _ => false,
     });
 }

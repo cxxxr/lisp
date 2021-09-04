@@ -36,6 +36,16 @@ fn check_num_args(args: &[Object], expected: usize) -> Result<(), RuntimeError> 
     Ok(())
 }
 
+fn check_num_args_range(args: &[Object], min: usize, max: usize) -> Result<(), RuntimeError> {
+    if args.len() < min {
+        return Err(RuntimeError::TooFewArguments(args.len(), min));
+    }
+    if max < args.len() {
+        return Err(RuntimeError::TooManyArguments(args.len(), max));
+    }
+    Ok(())
+}
+
 fn eval_internal(x: Object, env: &mut Env) -> Result<Object, RuntimeError> {
     match &*x {
         ObjectKind::Nil | ObjectKind::Fixnum(_) | ObjectKind::Func(_) => Ok(x),
@@ -52,6 +62,17 @@ fn eval_internal(x: Object, env: &mut Env) -> Result<Object, RuntimeError> {
                         let args: Vec<Object> = iter.collect();
                         check_num_args(&args, 1)?;
                         return Ok(Rc::clone(&args[0]));
+                    }
+                    "if" => {
+                        let args: Vec<Object> = iter.collect();
+                        check_num_args_range(&args, 2, 3)?;
+                        return match &*eval_internal(Rc::clone(&args[0]), env)? {
+                            ObjectKind::Nil => match args.get(2) {
+                                Some(x) => eval_internal(Rc::clone(x), env),
+                                None => Ok(object::nil()),
+                            },
+                            _ => eval_internal(Rc::clone(&args[1]), env),
+                        };
                     }
                     _ => (),
                 }
