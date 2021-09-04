@@ -28,6 +28,13 @@ impl Env {
     }
 }
 
+fn check_num_args(args: &[Object], expected: usize) -> Result<(), RuntimeError> {
+    if args.len() != expected {
+        return Err(RuntimeError::WrongNumArgs(args.len(), expected));
+    }
+    Ok(())
+}
+
 fn eval_internal(x: Object, env: &mut Env) -> Result<Object, RuntimeError> {
     match &*x {
         ObjectKind::Nil | ObjectKind::Fixnum(_) | ObjectKind::Func(_) => Ok(x),
@@ -42,9 +49,7 @@ fn eval_internal(x: Object, env: &mut Env) -> Result<Object, RuntimeError> {
                 match &**name {
                     "quote" => {
                         let args: Vec<Object> = iter.collect();
-                        if args.len() != 1 {
-                            return Err(RuntimeError::WrongNumArgs(args.len(), 1));
-                        }
+                        check_num_args(&args, 1)?;
                         return Ok(Rc::clone(&args[0]));
                     }
                     _ => (),
@@ -72,15 +77,26 @@ fn plus(args: &[Object]) -> Result<Object, RuntimeError> {
             ObjectKind::Fixnum(n) => {
                 acc += n;
             }
-            _ => return Err(RuntimeError::MismatchType(Rc::clone(arg), ObjectType::Number)),
+            _ => {
+                return Err(RuntimeError::MismatchType(
+                    Rc::clone(arg),
+                    ObjectType::Number,
+                ))
+            }
         }
     }
     Ok(object::fixnum(acc))
 }
 
+fn cons(args: &[Object]) -> Result<Object, RuntimeError> {
+    check_num_args(args, 2)?;
+    Ok(object::cons(Rc::clone(&args[0]), Rc::clone(&args[1])))
+}
+
 fn global_env() -> Env {
     let mut genv = Env::new();
     genv.set("+", Object::new(ObjectKind::Func(plus)));
+    genv.set("cons", Object::new(ObjectKind::Func(cons)));
     genv
 }
 
