@@ -80,6 +80,9 @@ pub fn fixnum(n: isize) -> Object {
 }
 
 pub fn symbol(s: &str) -> Object {
+    if s == "nil" {
+        return nil();
+    }
     Rc::new(ObjectKind::Symbol(s.to_string()))
 }
 

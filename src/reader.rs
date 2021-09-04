@@ -136,6 +136,7 @@ mod tests {
         verify("-123", fixnum(-123));
         verify("+123", fixnum(123));
         verify("()", nil());
+        verify("nil", nil());
         verify("(+)", cons(symbol("+"), nil()));
         verify(
             "(a b c)",
