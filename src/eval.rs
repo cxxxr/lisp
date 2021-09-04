@@ -121,6 +121,14 @@ fn plus(args: &[Object]) -> Result<Object, RuntimeError> {
     Ok(object::fixnum(acc))
 }
 
+fn is_atom(args: &[Object]) -> Result<Object, RuntimeError> {
+    check_num_args(args, 1)?;
+    match &*args[0] {
+        ObjectKind::Cons(_) => Ok(object::nil()),
+        _ => Ok(object::symbol("t")),
+    }
+}
+
 fn cons(args: &[Object]) -> Result<Object, RuntimeError> {
     check_num_args(args, 2)?;
     Ok(object::cons(Rc::clone(&args[0]), Rc::clone(&args[1])))
@@ -150,16 +158,17 @@ fn cdr(args: &[Object]) -> Result<Object, RuntimeError> {
 
 fn equal(args: &[Object]) -> Result<Object, RuntimeError> {
     check_num_args(args, 2)?;
-    Ok(if equal::equal(Rc::clone(&args[0]), Rc::clone(&args[1])) {
-        object::symbol("t")
+    if equal::equal(Rc::clone(&args[0]), Rc::clone(&args[1])) {
+        Ok(object::symbol("t"))
     } else {
-        object::nil()
-    })
+        Ok(object::nil())
+    }
 }
 
 fn global_env() -> Env {
     let mut genv = Env::new();
     genv.set("+", Object::new(ObjectKind::Func(plus)));
+    genv.set("atom?", Object::new(ObjectKind::Func(is_atom)));
     genv.set("cons", Object::new(ObjectKind::Func(cons)));
     genv.set("car", Object::new(ObjectKind::Func(car)));
     genv.set("cdr", Object::new(ObjectKind::Func(cdr)));

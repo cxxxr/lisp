@@ -21,6 +21,18 @@ fn verify_eval(input: &str, expected: Object) {
 }
 
 #[test]
+fn atom_test() {
+    verify_eval("(atom? 1)", symbol("t"));
+    verify_eval("(atom? 'foo)", symbol("t"));
+    verify_eval("(atom? 'foo)", symbol("t"));
+    verify_eval("(atom? (cons 1 2))", nil());
+    assert!(match call_eval("(atom?)") {
+        Err(RuntimeError::WrongNumArgs(0, 1)) => true,
+        _ => false,
+    });
+}
+
+#[test]
 fn add_test() {
     verify_eval("(+)", fixnum(0));
     verify_eval("(+ 1)", fixnum(1));
