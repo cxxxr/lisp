@@ -55,13 +55,13 @@ fn eval_quote(iter: object::ListIter) -> Result<Object, RuntimeError> {
 fn eval_if(iter: object::ListIter, env: &mut Env) -> Result<Object, RuntimeError> {
     let args: Vec<Object> = iter.collect();
     check_num_args_range(&args, 2, 3)?;
-    return match &*eval_internal(Rc::clone(&args[0]), env)? {
+    match &*eval_internal(Rc::clone(&args[0]), env)? {
         ObjectKind::Nil => match args.get(2) {
             Some(x) => eval_internal(Rc::clone(x), env),
             None => Ok(object::nil()),
         },
         _ => eval_internal(Rc::clone(&args[1]), env),
-    };
+    }
 }
 
 fn eval_function(
