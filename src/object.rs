@@ -7,6 +7,7 @@ pub enum ObjectType {
     Function,
     Cons,
     Symbol,
+    List,
 }
 
 #[derive(Debug)]
@@ -96,6 +97,10 @@ pub fn nil() -> Object {
     Rc::new(ObjectKind::Nil)
 }
 
+pub fn closure(parameters: Vec<String>, body: Vec<Object>) -> Object {
+    Rc::new(ObjectKind::Closure(Closure { parameters, body }))
+}
+
 impl fmt::Display for ObjectKind {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
@@ -104,7 +109,9 @@ impl fmt::Display for ObjectKind {
             ObjectKind::Symbol(s) => s.fmt(f),
             ObjectKind::Cons(cons) => cons.fmt(f),
             ObjectKind::Func(func) => write!(f, "<Fn {:p}>", &func),
-            ObjectKind::Closure(closure) => write!(f, "<Closure {:p}>", &closure),
+            ObjectKind::Closure(closure) => {
+                write!(f, "<Closure {:?} {:?}>", closure.parameters, closure.body)
+            }
         }
     }
 }

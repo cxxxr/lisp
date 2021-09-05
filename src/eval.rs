@@ -60,6 +60,32 @@ fn eval_define(args: &[Object], env: &mut Env) -> EvalResult {
     Ok(value)
 }
 
+fn eval_lambda(args_iter: &mut object::ListIter, _env: &mut Env) -> EvalResult {
+    let list = match args_iter.next() {
+        Some(arg) => match &*arg {
+            ObjectKind::Cons(cons) => cons.iter().collect(),
+            ObjectKind::Nil => Vec::new(),
+            _ => return Err(RuntimeError::MismatchType(arg, ObjectType::List)),
+        },
+        None => return Err(RuntimeError::TooFewArguments(0, 1)),
+    };
+
+    let mut params = Vec::new();
+    for param in list {
+        match &*param {
+            ObjectKind::Symbol(name) => params.push(name.clone()), // XXX
+            _ => {
+                return Err(RuntimeError::MismatchType(
+                    Rc::clone(&param),
+                    ObjectType::Symbol,
+                ))
+            }
+        }
+    }
+
+    return Ok(object::closure(params, args_iter.collect()));
+}
+
 fn eval_function(first: Object, iter: object::ListIter, env: &mut Env) -> EvalResult {
     let first = eval_internal(first, env)?;
     let func = match &*first {
@@ -98,6 +124,9 @@ fn eval_internal(x: Object, env: &mut Env) -> EvalResult {
                     "define" => {
                         let args: Vec<Object> = iter.collect();
                         return eval_define(&args, env);
+                    }
+                    "lambda" => {
+                        return eval_lambda(&mut iter, env);
                     }
                     _ => (),
                 }
