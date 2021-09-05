@@ -25,6 +25,7 @@ pub enum ObjectKind {
     Symbol(String),
     Cons(Cons),
     Func(fn(&[Object]) -> Result<Object, RuntimeError>),
+    Closure(Closure),
 }
 
 #[derive(Debug)]
@@ -40,6 +41,11 @@ impl Cons {
             is_end: false,
         }
     }
+}
+
+pub struct Closure {
+    parameters: Vec<String>,
+    body: Vec<Object>,
 }
 
 pub struct ListIter<'a> {
@@ -98,6 +104,7 @@ impl fmt::Display for ObjectKind {
             ObjectKind::Symbol(s) => s.fmt(f),
             ObjectKind::Cons(cons) => cons.fmt(f),
             ObjectKind::Func(func) => write!(f, "<Fn {:p}>", &func),
+            ObjectKind::Closure(closure) => write!(f, "<Closure {:p}>", &closure),
         }
     }
 }

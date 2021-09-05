@@ -31,6 +31,10 @@ pub fn equal(x: Object, y: Object) -> bool {
             Func(y) => std::ptr::eq(x, y),
             _ => false,
         },
+        Closure(x) => match &*y {
+            Closure(y) => std::ptr::eq(x, y),
+            _ => false,
+        },
     }
 }
 

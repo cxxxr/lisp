@@ -75,7 +75,9 @@ fn eval_function(first: Object, iter: object::ListIter, env: &mut Env) -> EvalRe
 
 fn eval_internal(x: Object, env: &mut Env) -> EvalResult {
     match &*x {
-        ObjectKind::Nil | ObjectKind::Fixnum(_) | ObjectKind::Func(_) => Ok(x),
+        ObjectKind::Nil | ObjectKind::Fixnum(_) | ObjectKind::Func(_) | ObjectKind::Closure(_) => {
+            Ok(x)
+        }
         ObjectKind::Symbol(s) => env
             .get(s)
             .ok_or(RuntimeError::UnboundVariable(s.to_string())),
