@@ -13,12 +13,18 @@ fn check_num_args(args: &[Object], expected: usize) -> Result<(), RuntimeError> 
     Ok(())
 }
 
-fn check_num_args_range(args: &[Object], min: usize, max: usize) -> Result<(), RuntimeError> {
+fn check_num_args_range(
+    args: &[Object],
+    min: usize,
+    max: impl Into<Option<usize>>,
+) -> Result<(), RuntimeError> {
     if args.len() < min {
         return Err(RuntimeError::TooFewArguments(args.len(), min));
     }
-    if max < args.len() {
-        return Err(RuntimeError::TooManyArguments(args.len(), max));
+    if let Some(max) = max.into() {
+        if max < args.len() {
+            return Err(RuntimeError::TooManyArguments(args.len(), max));
+        }
     }
     Ok(())
 }
