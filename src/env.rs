@@ -23,7 +23,7 @@ impl Env {
         Rc::new(RefCell::new(env))
     }
 
-    pub fn set(&mut self, name: &str, value: Object) {
+    pub fn insert(&mut self, name: &str, value: Object) {
         self.table.insert(name.to_string(), value);
     }
 

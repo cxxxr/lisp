@@ -57,7 +57,7 @@ fn eval_define(args: &[Object], env: Rc<RefCell<Env>>) -> EvalResult {
     };
 
     let value = eval_internal(value, Rc::clone(&env))?;
-    env.borrow_mut().set(name, Rc::clone(&value));
+    env.borrow_mut().insert(name, Rc::clone(&value));
     Ok(value)
 }
 
@@ -95,10 +95,11 @@ fn apply_closure(closure: &object::Closure, args: Vec<Object>) -> EvalResult {
         ));
     }
 
-    let env = Rc::clone(&closure.env);
+    let parent = Rc::clone(&closure.env);
+    let env = Rc::new(RefCell::new(Env::new(Some(parent))));
 
     for (param, arg) in closure.parameters.iter().zip(args.iter()) {
-        env.borrow_mut().set(param, Rc::clone(arg));
+        env.borrow_mut().insert(param, Rc::clone(arg));
     }
 
     let mut result = object::nil();
@@ -230,12 +231,12 @@ mod builtin {
 
 impl Env {
     pub fn init(&mut self) {
-        self.set("+", Object::new(ObjectKind::Func(builtin::plus)));
-        self.set("atom?", Object::new(ObjectKind::Func(builtin::is_atom)));
-        self.set("cons", Object::new(ObjectKind::Func(builtin::cons)));
-        self.set("car", Object::new(ObjectKind::Func(builtin::car)));
-        self.set("cdr", Object::new(ObjectKind::Func(builtin::cdr)));
-        self.set("equal", Object::new(ObjectKind::Func(builtin::equal)));
+        self.insert("+", Object::new(ObjectKind::Func(builtin::plus)));
+        self.insert("atom?", Object::new(ObjectKind::Func(builtin::is_atom)));
+        self.insert("cons", Object::new(ObjectKind::Func(builtin::cons)));
+        self.insert("car", Object::new(ObjectKind::Func(builtin::car)));
+        self.insert("cdr", Object::new(ObjectKind::Func(builtin::cdr)));
+        self.insert("equal", Object::new(ObjectKind::Func(builtin::equal)));
     }
 }
 
