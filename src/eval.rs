@@ -87,13 +87,18 @@ fn eval_lambda(args_iter: &mut object::ListIter, _env: &mut Env) -> EvalResult {
 }
 
 fn eval_function(first: Object, iter: object::ListIter, env: &mut Env) -> EvalResult {
+    fn eval_args(iter: object::ListIter, env: &mut Env) -> Result<Vec<Object>, RuntimeError> {
+        let mut args = Vec::new();
+        for arg in iter {
+            args.push(eval_internal(arg, env)?);
+        }
+        Ok(args)
+    }
+
     let first = eval_internal(first, env)?;
     match &*first {
         ObjectKind::Func(func) => {
-            let mut args = Vec::new();
-            for arg in iter {
-                args.push(eval_internal(arg, env)?);
-            }
+            let args = eval_args(iter, env)?;
             func(&args)
         }
         _ => Err(RuntimeError::MismatchType(first, ObjectType::Function)),
