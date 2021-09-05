@@ -105,76 +105,81 @@ fn eval_internal(x: Object, env: &mut Env) -> EvalResult {
     }
 }
 
-fn plus(args: &[Object]) -> EvalResult {
-    let mut acc = 0;
-    for arg in args {
-        match **arg {
-            ObjectKind::Fixnum(n) => {
-                acc += n;
-            }
-            _ => {
-                return Err(RuntimeError::MismatchType(
-                    Rc::clone(arg),
-                    ObjectType::Number,
-                ))
+mod builtin {
+    use super::object::Object;
+    use super::*;
+
+    pub fn plus(args: &[Object]) -> EvalResult {
+        let mut acc = 0;
+        for arg in args {
+            match **arg {
+                ObjectKind::Fixnum(n) => {
+                    acc += n;
+                }
+                _ => {
+                    return Err(RuntimeError::MismatchType(
+                        Rc::clone(arg),
+                        ObjectType::Number,
+                    ))
+                }
             }
         }
+        Ok(object::fixnum(acc))
     }
-    Ok(object::fixnum(acc))
-}
 
-fn is_atom(args: &[Object]) -> EvalResult {
-    check_num_args(args, 1)?;
-    match &*args[0] {
-        ObjectKind::Cons(_) => Ok(object::nil()),
-        _ => Ok(object::symbol("t")),
+    pub fn is_atom(args: &[Object]) -> EvalResult {
+        check_num_args(args, 1)?;
+        match &*args[0] {
+            ObjectKind::Cons(_) => Ok(object::nil()),
+            _ => Ok(object::symbol("t")),
+        }
     }
-}
 
-fn cons(args: &[Object]) -> EvalResult {
-    check_num_args(args, 2)?;
-    Ok(object::cons(Rc::clone(&args[0]), Rc::clone(&args[1])))
-}
-
-fn cxr<F>(args: &[Object], accessor: F) -> EvalResult
-where
-    F: Fn(&object::Cons) -> Object,
-{
-    check_num_args(args, 1)?;
-    match &*args[0] {
-        ObjectKind::Cons(cons) => Ok(accessor(cons)),
-        _ => Err(RuntimeError::MismatchType(
-            Rc::clone(&args[0]),
-            ObjectType::Cons,
-        )),
+    pub fn cons(args: &[Object]) -> EvalResult {
+        check_num_args(args, 2)?;
+        Ok(object::cons(Rc::clone(&args[0]), Rc::clone(&args[1])))
     }
-}
 
-fn car(args: &[Object]) -> EvalResult {
-    cxr(args, |cons| Rc::clone(&cons.car))
-}
+    fn cxr<F>(args: &[Object], accessor: F) -> EvalResult
+    where
+        F: Fn(&object::Cons) -> Object,
+    {
+        check_num_args(args, 1)?;
+        match &*args[0] {
+            ObjectKind::Cons(cons) => Ok(accessor(cons)),
+            _ => Err(RuntimeError::MismatchType(
+                Rc::clone(&args[0]),
+                ObjectType::Cons,
+            )),
+        }
+    }
 
-fn cdr(args: &[Object]) -> EvalResult {
-    cxr(args, |cons| Rc::clone(&cons.cdr))
-}
+    pub fn car(args: &[Object]) -> EvalResult {
+        cxr(args, |cons| Rc::clone(&cons.car))
+    }
 
-fn equal(args: &[Object]) -> EvalResult {
-    check_num_args(args, 2)?;
-    if equal::equal(Rc::clone(&args[0]), Rc::clone(&args[1])) {
-        Ok(object::symbol("t"))
-    } else {
-        Ok(object::nil())
+    pub fn cdr(args: &[Object]) -> EvalResult {
+        cxr(args, |cons| Rc::clone(&cons.cdr))
+    }
+
+    pub fn equal(args: &[Object]) -> EvalResult {
+        check_num_args(args, 2)?;
+        if equal::equal(Rc::clone(&args[0]), Rc::clone(&args[1])) {
+            Ok(object::symbol("t"))
+        } else {
+            Ok(object::nil())
+        }
     }
 }
 
 impl Env {
     pub fn init(&mut self) {
-        self.set("+", Object::new(ObjectKind::Func(plus)));
-        self.set("atom?", Object::new(ObjectKind::Func(is_atom)));
-        self.set("cons", Object::new(ObjectKind::Func(cons)));
-        self.set("car", Object::new(ObjectKind::Func(car)));
-        self.set("cdr", Object::new(ObjectKind::Func(cdr)));
-        self.set("equal", Object::new(ObjectKind::Func(equal)));
+        self.set("+", Object::new(ObjectKind::Func(builtin::plus)));
+        self.set("atom?", Object::new(ObjectKind::Func(builtin::is_atom)));
+        self.set("cons", Object::new(ObjectKind::Func(builtin::cons)));
+        self.set("car", Object::new(ObjectKind::Func(builtin::car)));
+        self.set("cdr", Object::new(ObjectKind::Func(builtin::cdr)));
+        self.set("equal", Object::new(ObjectKind::Func(builtin::equal)));
     }
 }
 
