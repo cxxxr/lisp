@@ -34,10 +34,6 @@ pub struct Cons {
 }
 
 impl Cons {
-    pub fn new(car: Object, cdr: Object) -> Self {
-        Self { car, cdr }
-    }
-
     pub fn iter(&self) -> ListIter {
         ListIter {
             cons: self,
@@ -73,10 +69,10 @@ impl<'a> Iterator for ListIter<'a> {
 }
 
 pub fn cons(car: Object, cdr: Object) -> Object {
-    Rc::new(ObjectKind::Cons(Cons::new(
-        Rc::clone(&car),
-        Rc::clone(&cdr),
-    )))
+    Rc::new(ObjectKind::Cons(Cons {
+        car: Rc::clone(&car),
+        cdr: Rc::clone(&cdr),
+    }))
 }
 
 pub fn fixnum(n: isize) -> Object {
