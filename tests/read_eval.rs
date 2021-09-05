@@ -6,9 +6,12 @@ use lisp::{
     reader::read_from_string,
 };
 
+use std::rc::Rc;
+use std::cell::RefCell;
+
 extern crate lisp;
 
-fn call_eval_with_env(input: &str, env: &mut Env) -> EvalResult {
+fn call_eval_with_env(input: &str, env: Rc<RefCell<Env>>) -> EvalResult {
     let x = match read_from_string(input) {
         Ok((x, _)) => x,
         _ => unreachable!(),
@@ -17,7 +20,7 @@ fn call_eval_with_env(input: &str, env: &mut Env) -> EvalResult {
 }
 
 fn call_eval(input: &str) -> EvalResult {
-    call_eval_with_env(input, &mut Env::global_env())
+    call_eval_with_env(input, Env::global_env())
 }
 
 fn assert_eval(expected: Object, result: EvalResult) {
@@ -29,7 +32,7 @@ fn verify_eval(expected: Object, input: &str) {
     assert_eval(expected, call_eval(input));
 }
 
-fn verify_eval_with_env(expected: Object, input: &str, env: &mut Env) {
+fn verify_eval_with_env(expected: Object, input: &str, env: Rc<RefCell<Env>>) {
     assert_eval(expected, call_eval_with_env(input, env));
 }
 
@@ -126,14 +129,14 @@ fn if_test() {
 
 #[test]
 fn define_test() {
-    let mut env = Env::global_env();
-    verify_eval_with_env(fixnum(1), "(define x 1)", &mut env);
-    verify_eval_with_env(fixnum(2), "(define x (+ x 1))", &mut env);
+    let env = Env::global_env();
+    verify_eval_with_env(fixnum(1), "(define x 1)", Rc::clone(&env));
+    verify_eval_with_env(fixnum(2), "(define x (+ x 1))", env);
 }
 
 #[test]
 fn lambda_test() {
-    let mut env = Env::global_env();
-    assert!(call_eval_with_env("(define 1+ (lambda (x) (+ x 1)))", &mut env).is_ok());
-    verify_eval_with_env(fixnum(1), "(1+ 0)", &mut env);
+    let env = Env::global_env();
+    assert!(call_eval_with_env("(define 1+ (lambda (x) (+ x 1)))", Rc::clone(&env)).is_ok());
+    verify_eval_with_env(fixnum(1), "(1+ 0)", env);
 }

@@ -1,23 +1,26 @@
 use std::collections::HashMap;
 use std::rc::Rc;
+use std::cell::RefCell;
 
 use super::object::Object;
 
 pub struct Env {
+    parent: Option<Rc<RefCell<Env>>>,
     table: HashMap<String, Object>,
 }
 
 impl Env {
-    pub fn new() -> Self {
+    pub fn new(parent: Option<Rc<RefCell<Env>>>) -> Self {
         Self {
+            parent,
             table: HashMap::new(),
         }
     }
 
-    pub fn global_env() -> Self {
-        let mut env = Self::new();
+    pub fn global_env() -> Rc<RefCell<Self>> {
+        let mut env = Self::new(None);
         env.init();
-        env
+        Rc::new(RefCell::new(env))
     }
 
     pub fn set(&mut self, name: &str, value: Object) {
@@ -25,9 +28,12 @@ impl Env {
     }
 
     pub fn get(&self, name: &str) -> Option<Object> {
-        match self.table.get(name) {
+        if let Some(v) = self.table.get(name) {
+            return Some(Rc::clone(v));
+        }
+        match &self.parent {
             None => None,
-            Some(v) => Some(Rc::clone(v)),
+            Some(parent) => parent.borrow().get(name),
         }
     }
 }

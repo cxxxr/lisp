@@ -1,4 +1,5 @@
 use std::io::{self, stdin, stdout, BufRead, BufReader, Write};
+use std::rc::Rc;
 
 fn prompt(s: &str) -> io::Result<()> {
     let stdout = stdout();
@@ -13,13 +14,13 @@ fn main() {
     let stdin = BufReader::new(stdin);
     let mut lines = stdin.lines();
 
-    let mut env = lisp::env::Env::global_env();
+    let env = lisp::env::Env::global_env();
 
     loop {
         prompt("LISP> ").unwrap();
         if let Some(Ok(input)) = lines.next() {
             match lisp::reader::read_from_string(&input) {
-                Ok((obj, _pos)) => match lisp::eval::eval(obj, &mut env) {
+                Ok((obj, _pos)) => match lisp::eval::eval(obj, Rc::clone(&env)) {
                     Ok(result) => println!("{}", result),
                     Err(e) => println!("{}", e),
                 },

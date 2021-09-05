@@ -1,3 +1,4 @@
+use std::cell::RefCell;
 use std::rc::Rc;
 
 use super::env::Env;
@@ -34,18 +35,18 @@ fn eval_quote(args: &[Object]) -> EvalResult {
     return Ok(Rc::clone(&args[0]));
 }
 
-fn eval_if(args: &[Object], env: &mut Env) -> EvalResult {
+fn eval_if(args: &[Object], env: Rc<RefCell<Env>>) -> EvalResult {
     check_num_args_range(&args, 2, 3)?;
-    match &*eval_internal(Rc::clone(&args[0]), env)? {
+    match &*eval_internal(Rc::clone(&args[0]), Rc::clone(&env))? {
         ObjectKind::Nil => match args.get(2) {
-            Some(x) => eval_internal(Rc::clone(x), env),
+            Some(x) => eval_internal(Rc::clone(x), Rc::clone(&env)),
             None => Ok(object::nil()),
         },
-        _ => eval_internal(Rc::clone(&args[1]), env),
+        _ => eval_internal(Rc::clone(&args[1]), Rc::clone(&env)),
     }
 }
 
-fn eval_define(args: &[Object], env: &mut Env) -> EvalResult {
+fn eval_define(args: &[Object], env: Rc<RefCell<Env>>) -> EvalResult {
     check_num_args(&args, 2)?;
     let var = Rc::clone(&args[0]);
     let value = Rc::clone(&args[1]);
@@ -55,12 +56,12 @@ fn eval_define(args: &[Object], env: &mut Env) -> EvalResult {
         _ => return Err(RuntimeError::MismatchType(var, ObjectType::Symbol)),
     };
 
-    let value = eval_internal(value, env)?;
-    env.set(name, Rc::clone(&value));
+    let value = eval_internal(value, Rc::clone(&env))?;
+    env.borrow_mut().set(name, Rc::clone(&value));
     Ok(value)
 }
 
-fn eval_lambda(args_iter: &mut object::ListIter, _env: &mut Env) -> EvalResult {
+fn eval_lambda(args_iter: &mut object::ListIter, env: Rc<RefCell<Env>>) -> EvalResult {
     let list = match args_iter.next() {
         Some(arg) => match &*arg {
             ObjectKind::Cons(cons) => cons.iter().collect(),
@@ -83,7 +84,7 @@ fn eval_lambda(args_iter: &mut object::ListIter, _env: &mut Env) -> EvalResult {
         }
     }
 
-    return Ok(object::closure(params, args_iter.collect()));
+    return Ok(object::closure(params, args_iter.collect(), env));
 }
 
 fn apply_closure(closure: &object::Closure, args: Vec<Object>) -> EvalResult {
@@ -94,31 +95,27 @@ fn apply_closure(closure: &object::Closure, args: Vec<Object>) -> EvalResult {
         ));
     }
 
-    let mut env = Env::global_env();
+    let env = Rc::clone(&closure.env);
 
     for (param, arg) in closure.parameters.iter().zip(args.iter()) {
-        env.set(param, Rc::clone(arg));
+        env.borrow_mut().set(param, Rc::clone(arg));
     }
 
     let mut result = object::nil();
     for form in closure.body.iter() {
-        result = eval_internal(Rc::clone(form), &mut env)?;
+        result = eval_internal(Rc::clone(form), Rc::clone(&env))?;
     }
 
     Ok(result)
 }
 
-fn apply_function(first: Object, iter: object::ListIter, env: &mut Env) -> EvalResult {
-    fn eval_args(iter: object::ListIter, env: &mut Env) -> Result<Vec<Object>, RuntimeError> {
-        let mut args = Vec::new();
-        for arg in iter {
-            args.push(eval_internal(arg, env)?);
-        }
-        Ok(args)
+fn apply_function(first: Object, iter: object::ListIter, env: Rc<RefCell<Env>>) -> EvalResult {
+    let first = eval_internal(first, Rc::clone(&env))?;
+    let mut args = Vec::new();
+    for arg in iter {
+        args.push(eval_internal(arg, Rc::clone(&env))?);
     }
 
-    let first = eval_internal(first, env)?;
-    let args = eval_args(iter, env)?;
     match &*first {
         ObjectKind::Func(func) => func(&args),
         ObjectKind::Closure(closure) => apply_closure(closure, args),
@@ -126,12 +123,13 @@ fn apply_function(first: Object, iter: object::ListIter, env: &mut Env) -> EvalR
     }
 }
 
-fn eval_internal(x: Object, env: &mut Env) -> EvalResult {
+fn eval_internal(x: Object, env: Rc<RefCell<Env>>) -> EvalResult {
     match &*x {
         ObjectKind::Nil | ObjectKind::Fixnum(_) | ObjectKind::Func(_) | ObjectKind::Closure(_) => {
             Ok(x)
         }
         ObjectKind::Symbol(s) => env
+            .borrow()
             .get(s)
             .ok_or(RuntimeError::UnboundVariable(s.to_string())),
         ObjectKind::Cons(list) => {
@@ -241,6 +239,6 @@ impl Env {
     }
 }
 
-pub fn eval(x: Object, env: &mut Env) -> EvalResult {
+pub fn eval(x: Object, env: Rc<RefCell<Env>>) -> EvalResult {
     eval_internal(x, env)
 }

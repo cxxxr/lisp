@@ -1,5 +1,8 @@
 use core::fmt;
+use std::cell::RefCell;
 use std::rc::Rc;
+
+use super::env::Env;
 
 #[derive(Debug)]
 pub enum ObjectType {
@@ -45,6 +48,7 @@ impl Cons {
 }
 
 pub struct Closure {
+    pub env: Rc<RefCell<Env>>,
     pub parameters: Vec<String>,
     pub body: Vec<Object>,
 }
@@ -97,8 +101,8 @@ pub fn nil() -> Object {
     Rc::new(ObjectKind::Nil)
 }
 
-pub fn closure(parameters: Vec<String>, body: Vec<Object>) -> Object {
-    Rc::new(ObjectKind::Closure(Closure { parameters, body }))
+pub fn closure(parameters: Vec<String>, body: Vec<Object>, env: Rc<RefCell<Env>>) -> Object {
+    Rc::new(ObjectKind::Closure(Closure { parameters, body, env}))
 }
 
 impl fmt::Display for ObjectKind {
