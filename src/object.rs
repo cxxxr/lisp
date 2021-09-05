@@ -45,8 +45,8 @@ impl Cons {
 }
 
 pub struct Closure {
-    parameters: Vec<String>,
-    body: Vec<Object>,
+    pub parameters: Vec<String>,
+    pub body: Vec<Object>,
 }
 
 pub struct ListIter<'a> {

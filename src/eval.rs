@@ -86,8 +86,26 @@ fn eval_lambda(args_iter: &mut object::ListIter, _env: &mut Env) -> EvalResult {
     return Ok(object::closure(params, args_iter.collect()));
 }
 
-fn apply_closure(_closure: &object::Closure, _args: Vec<Object>, _env: &Env) -> EvalResult {
-    unimplemented!();
+fn apply_closure(closure: &object::Closure, args: Vec<Object>, _env: &Env) -> EvalResult {
+    if closure.parameters.len() != args.len() {
+        return Err(RuntimeError::WrongNumArgs(
+            args.len(),
+            closure.parameters.len(),
+        ));
+    }
+
+    let mut env = Env::global_env();
+
+    for (param, arg) in closure.parameters.iter().zip(args.iter()) {
+        env.set(param, Rc::clone(arg));
+    }
+
+    let mut result = object::nil();
+    for form in closure.body.iter() {
+        result = eval_internal(Rc::clone(form), &mut env)?;
+    }
+
+    Ok(result)
 }
 
 fn apply_function(first: Object, iter: object::ListIter, env: &mut Env) -> EvalResult {

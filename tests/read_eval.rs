@@ -130,3 +130,10 @@ fn define_test() {
     verify_eval_with_env(fixnum(1), "(define x 1)", &mut env);
     verify_eval_with_env(fixnum(2), "(define x (+ x 1))", &mut env);
 }
+
+#[test]
+fn lambda_test() {
+    let mut env = Env::global_env();
+    assert!(call_eval_with_env("(define 1+ (lambda (x) (+ x 1)))", &mut env).is_ok());
+    verify_eval_with_env(fixnum(1), "(1+ 0)", &mut env);
+}
