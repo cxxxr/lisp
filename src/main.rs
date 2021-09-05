@@ -13,8 +13,7 @@ fn main() {
     let stdin = BufReader::new(stdin);
     let mut lines = stdin.lines();
 
-    let mut env = lisp::env::Env::new();
-    env.init();
+    let mut env = lisp::env::Env::global_env();
 
     loop {
         prompt("LISP> ").unwrap();

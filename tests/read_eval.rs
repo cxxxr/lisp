@@ -17,7 +17,7 @@ fn call_eval_with_env(input: &str, env: &mut Env) -> EvalResult {
 }
 
 fn call_eval(input: &str) -> EvalResult {
-    call_eval_with_env(input, &mut Env::new())
+    call_eval_with_env(input, &mut Env::global_env())
 }
 
 fn assert_eval(expected: Object, result: EvalResult) {
@@ -126,7 +126,7 @@ fn if_test() {
 
 #[test]
 fn define_test() {
-    let mut env = Env::new();
+    let mut env = Env::global_env();
     verify_eval_with_env(fixnum(1), "(define x 1)", &mut env);
     verify_eval_with_env(fixnum(2), "(define x (+ x 1))", &mut env);
 }

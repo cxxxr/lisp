@@ -9,7 +9,13 @@ pub struct Env {
 
 impl Env {
     pub fn new() -> Self {
-        let mut env = Env{table: HashMap::new()};
+        Self {
+            table: HashMap::new(),
+        }
+    }
+
+    pub fn global_env() -> Self {
+        let mut env = Self::new();
         env.init();
         env
     }
