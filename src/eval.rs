@@ -86,7 +86,7 @@ fn eval_lambda(args_iter: &mut object::ListIter, _env: &mut Env) -> EvalResult {
     return Ok(object::closure(params, args_iter.collect()));
 }
 
-fn apply_closure(closure: &object::Closure, args: Vec<Object>, _env: &Env) -> EvalResult {
+fn apply_closure(closure: &object::Closure, args: Vec<Object>) -> EvalResult {
     if closure.parameters.len() != args.len() {
         return Err(RuntimeError::WrongNumArgs(
             args.len(),
@@ -121,7 +121,7 @@ fn apply_function(first: Object, iter: object::ListIter, env: &mut Env) -> EvalR
     let args = eval_args(iter, env)?;
     match &*first {
         ObjectKind::Func(func) => func(&args),
-        ObjectKind::Closure(closure) => apply_closure(closure, args, env),
+        ObjectKind::Closure(closure) => apply_closure(closure, args),
         _ => Err(RuntimeError::MismatchType(first, ObjectType::Function)),
     }
 }
