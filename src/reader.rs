@@ -55,7 +55,7 @@ fn read_list(input: &[u8], mut pos: usize) -> ReadResult {
 
     pos = skip_spaces(input, pos);
     match peek_char(input, pos)? {
-        b')' => return Ok((object::nil(), pos)),
+        b')' => return Ok((object::nil(), pos + 1)),
         _ => (),
     }
 
@@ -167,5 +167,6 @@ mod tests {
                 cons(cons(symbol("a"), cons(symbol("b"), nil())), nil()),
             ),
         );
+        verify("(() 1)", cons(nil(), cons(fixnum(1), nil())));
     }
 }
