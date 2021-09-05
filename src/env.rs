@@ -1,6 +1,6 @@
+use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
-use std::cell::RefCell;
 
 use super::object::Object;
 
@@ -25,6 +25,17 @@ impl Env {
 
     pub fn insert(&mut self, name: &str, value: Object) {
         self.table.insert(name.to_string(), value);
+    }
+
+    pub fn set(&mut self, name: &str, value: Object) -> bool {
+        if let Some(v) = self.table.get_mut(name) {
+            *v = Rc::clone(&value);
+            return true;
+        }
+        match &self.parent {
+            None => false,
+            Some(parent) => parent.borrow_mut().set(name, value),
+        }
     }
 
     pub fn get(&self, name: &str) -> Option<Object> {

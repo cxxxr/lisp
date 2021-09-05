@@ -6,8 +6,8 @@ use lisp::{
     reader::read_from_string,
 };
 
-use std::rc::Rc;
 use std::cell::RefCell;
+use std::rc::Rc;
 
 extern crate lisp;
 
@@ -142,9 +142,22 @@ fn lambda_test() {
 }
 
 #[test]
+fn set_test() -> Result<(), RuntimeError> {
+    assert!(match call_eval("(set! x 0)") {
+        Err(RuntimeError::UnboundVariable(var)) if var == "x" => true,
+        _ => false,
+    });
+    let env = Env::global_env();
+    call_eval_with_env("(define foo nil)", Rc::clone(&env))?;
+    verify_eval_with_env(fixnum(10), "(set! foo 10)", Rc::clone(&env));
+    verify_eval_with_env(fixnum(10), "foo", Rc::clone(&env));
+    Ok(())
+}
+
+#[test]
 fn closure_test() -> Result<(), RuntimeError> {
     let env = Env::global_env();
-    call_eval_with_env("(define mkcounter (lambda () (define counter 0) (lambda () (define counter (+ counter 1)) counter)))", Rc::clone(&env))?;
+    call_eval_with_env("(define mkcounter (lambda () (define counter 0) (lambda () (set! counter (+ counter 1)) counter)))", Rc::clone(&env))?;
     call_eval_with_env("(define c (mkcounter))", Rc::clone(&env))?;
     verify_eval_with_env(fixnum(1), "(c)", Rc::clone(&env));
     verify_eval_with_env(fixnum(2), "(c)", Rc::clone(&env));

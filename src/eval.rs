@@ -87,6 +87,25 @@ fn eval_lambda(args_iter: &mut object::ListIter, env: Rc<RefCell<Env>>) -> EvalR
     return Ok(object::closure(params, args_iter.collect(), env));
 }
 
+fn eval_set(args: &[Object], env: Rc<RefCell<Env>>) -> EvalResult {
+    check_num_args(&args, 2)?;
+    let var = Rc::clone(&args[0]);
+    let value = Rc::clone(&args[1]);
+
+    let name = match &*var {
+        ObjectKind::Symbol(name) => name,
+        _ => return Err(RuntimeError::MismatchType(var, ObjectType::Symbol)),
+    };
+
+    let value = eval_internal(value, Rc::clone(&env))?;
+    let mut env = env.borrow_mut();
+    if env.set(name, Rc::clone(&value)) {
+        Ok(value)
+    } else {
+        Err(RuntimeError::UnboundVariable(name.clone()))
+    }
+}
+
 fn apply_closure(closure: &object::Closure, args: Vec<Object>) -> EvalResult {
     if closure.parameters.len() != args.len() {
         return Err(RuntimeError::WrongNumArgs(
@@ -153,6 +172,10 @@ fn eval_internal(x: Object, env: Rc<RefCell<Env>>) -> EvalResult {
                     }
                     "lambda" => {
                         return eval_lambda(&mut iter, env);
+                    }
+                    "set!" => {
+                        let args: Vec<Object> = iter.collect();
+                        return eval_set(&args, env);
                     }
                     _ => (),
                 }
