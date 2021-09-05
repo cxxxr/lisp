@@ -86,7 +86,11 @@ fn eval_lambda(args_iter: &mut object::ListIter, _env: &mut Env) -> EvalResult {
     return Ok(object::closure(params, args_iter.collect()));
 }
 
-fn eval_function(first: Object, iter: object::ListIter, env: &mut Env) -> EvalResult {
+fn apply_closure(_closure: &object::Closure, _args: Vec<Object>, _env: &Env) -> EvalResult {
+    unimplemented!();
+}
+
+fn apply_function(first: Object, iter: object::ListIter, env: &mut Env) -> EvalResult {
     fn eval_args(iter: object::ListIter, env: &mut Env) -> Result<Vec<Object>, RuntimeError> {
         let mut args = Vec::new();
         for arg in iter {
@@ -96,11 +100,10 @@ fn eval_function(first: Object, iter: object::ListIter, env: &mut Env) -> EvalRe
     }
 
     let first = eval_internal(first, env)?;
+    let args = eval_args(iter, env)?;
     match &*first {
-        ObjectKind::Func(func) => {
-            let args = eval_args(iter, env)?;
-            func(&args)
-        }
+        ObjectKind::Func(func) => func(&args),
+        ObjectKind::Closure(closure) => apply_closure(closure, args, env),
         _ => Err(RuntimeError::MismatchType(first, ObjectType::Function)),
     }
 }
@@ -137,7 +140,7 @@ fn eval_internal(x: Object, env: &mut Env) -> EvalResult {
                     _ => (),
                 }
             }
-            eval_function(first, iter, env)
+            apply_function(first, iter, env)
         }
     }
 }
