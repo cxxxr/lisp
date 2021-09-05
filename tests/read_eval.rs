@@ -140,3 +140,14 @@ fn lambda_test() {
     assert!(call_eval_with_env("(define 1+ (lambda (x) (+ x 1)))", Rc::clone(&env)).is_ok());
     verify_eval_with_env(fixnum(1), "(1+ 0)", env);
 }
+
+#[test]
+fn closure_test() -> Result<(), RuntimeError> {
+    let env = Env::global_env();
+    call_eval_with_env("(define mkcounter (lambda () (define counter 0) (lambda () (define counter (+ counter 1)) counter)))", Rc::clone(&env))?;
+    call_eval_with_env("(define c (mkcounter))", Rc::clone(&env))?;
+    verify_eval_with_env(fixnum(1), "(c)", Rc::clone(&env));
+    verify_eval_with_env(fixnum(2), "(c)", Rc::clone(&env));
+    verify_eval_with_env(fixnum(3), "(c)", Rc::clone(&env));
+    Ok(())
+}
