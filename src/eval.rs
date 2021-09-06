@@ -3,7 +3,8 @@ use std::rc::Rc;
 
 use super::env::Env;
 use super::equal;
-use super::object::{self, Object, ObjectKind, ObjectType, RuntimeError};
+use super::object::{self, Object, ObjectKind, ObjectType};
+use super::error::RuntimeError;
 
 pub type EvalResult = Result<Object, RuntimeError>;
 

@@ -1,8 +1,9 @@
 use lisp::{
     env::Env,
     equal::equal,
+    error::RuntimeError,
     eval::{eval, EvalResult},
-    object::{cons, fixnum, nil, symbol, Object, ObjectType, RuntimeError},
+    object::{cons, fixnum, nil, symbol, Object, ObjectType},
     reader::read_from_string,
 };
 
