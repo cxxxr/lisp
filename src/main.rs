@@ -19,7 +19,7 @@ fn main() {
     loop {
         prompt("LISP> ").unwrap();
         if let Some(Ok(input)) = lines.next() {
-            match lisp::read::read_from_string(&input) {
+            match lisp::reader::read_from_string(&input) {
                 Ok((obj, _pos)) => match lisp::eval::eval(obj, Rc::clone(&env)) {
                     Ok(result) => println!("{}", result),
                     Err(e) => println!("{}", e),
