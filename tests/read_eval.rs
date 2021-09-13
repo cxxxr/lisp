@@ -4,7 +4,7 @@ use lisp::{
     error::RuntimeError,
     eval::{eval, EvalResult},
     object::{cons, fixnum, nil, symbol, Object, ObjectType},
-    reader::read_from_string,
+    read::read_from_string,
 };
 
 use std::cell::RefCell;
