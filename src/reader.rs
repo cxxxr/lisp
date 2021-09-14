@@ -42,9 +42,11 @@ fn is_delimiter(b: u8) -> bool {
         _ => false,
     }
 }
+
 pub trait Reader {
-    fn peek_char(&self) -> Result<u8, ReadError>;
+    fn peek_char(&mut self) -> Result<u8, ReadError>;
     fn next_char(&mut self) -> Result<u8, ReadError>;
+    fn clear(&mut self);
 
     fn skip_spaces(&mut self) {
         loop {
@@ -128,7 +130,10 @@ pub trait Reader {
         self.skip_spaces();
 
         match self.peek_char()? {
-            b')' => Err(ReadError::UnmatchedClosedParen),
+            b')' => {
+                self.clear();
+                Err(ReadError::UnmatchedClosedParen)
+            },
             b'(' => {
                 self.next_char().unwrap();
                 self.read_list()
@@ -166,7 +171,7 @@ impl StringStream {
 }
 
 impl Reader for StringStream {
-    fn peek_char(&self) -> Result<u8, ReadError> {
+    fn peek_char(&mut self) -> Result<u8, ReadError> {
         if self.pos < self.buffer.len() {
             Ok(self.buffer[self.pos])
         } else {
@@ -179,6 +184,11 @@ impl Reader for StringStream {
             self.pos += 1;
             Ok(c)
         })
+    }
+
+    fn clear(&mut self) {
+        self.buffer.clear();
+        self.pos = 0;
     }
 }
 
@@ -199,7 +209,7 @@ impl<R: io::Read> InputStream<R> {
         let mut buf = String::new();
         match self.rdr.read_line(&mut buf) {
             Ok(_) => {
-                self.inner.update(buf.trim_end().as_bytes().to_vec());
+                self.inner.update(buf.as_bytes().to_vec());
                 Some(())
             }
             Err(_) => None,
@@ -208,19 +218,26 @@ impl<R: io::Read> InputStream<R> {
 }
 
 impl<R: io::Read> Reader for InputStream<R> {
-    fn peek_char(&self) -> Result<u8, ReadError> {
-        self.inner.peek_char()
-    }
-
-    fn next_char(&mut self) -> Result<u8, ReadError> {
-        match self.inner.next_char() {
+    fn peek_char(&mut self) -> Result<u8, ReadError> {
+        match self.inner.peek_char() {
             Ok(c) => Ok(c),
             Err(ReadError::EndOfFile) => {
-                self.read_line();
-                self.inner.next_char()
+                if self.read_line().is_none() {
+                    Err(ReadError::EndOfFile)
+                } else {
+                    self.inner.peek_char()
+                }
             }
             Err(e) => Err(e),
         }
+    }
+
+    fn next_char(&mut self) -> Result<u8, ReadError> {
+        self.peek_char().map(|_| self.inner.next_char().unwrap())
+    }
+
+    fn clear(&mut self) {
+        self.inner.clear();
     }
 }
 
@@ -231,10 +248,10 @@ pub fn read_from_string(input: &str) -> Result<(object::Object, usize), ReadErro
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use super::super::equal::equal;
     use super::super::object::*;
     use super::read_from_string;
+    use super::*;
 
     #[test]
     fn string_stream() {
