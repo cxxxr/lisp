@@ -43,7 +43,7 @@ fn is_delimiter(b: u8) -> bool {
     }
 }
 
-pub trait Reader {
+pub trait ReaderInternal {
     fn peek_char(&mut self) -> Result<u8, ReadError>;
     fn next_char(&mut self) -> Result<u8, ReadError>;
     fn clear(&mut self);
@@ -133,7 +133,7 @@ pub trait Reader {
             b')' => {
                 self.clear();
                 Err(ReadError::UnmatchedClosedParen)
-            },
+            }
             b'(' => {
                 self.next_char().unwrap();
                 self.read_list()
@@ -144,6 +144,12 @@ pub trait Reader {
             }
             _ => self.read_atom(),
         }
+    }
+}
+
+pub trait Reader: ReaderInternal {
+    fn read(&mut self) -> ReadResult {
+        self.read_ahead()
     }
 }
 
@@ -170,7 +176,7 @@ impl StringStream {
     }
 }
 
-impl Reader for StringStream {
+impl ReaderInternal for StringStream {
     fn peek_char(&mut self) -> Result<u8, ReadError> {
         if self.pos < self.buffer.len() {
             Ok(self.buffer[self.pos])
@@ -191,6 +197,8 @@ impl Reader for StringStream {
         self.pos = 0;
     }
 }
+
+impl Reader for StringStream {}
 
 pub struct InputStream<R> {
     rdr: io::BufReader<R>,
@@ -217,7 +225,7 @@ impl<R: io::Read> InputStream<R> {
     }
 }
 
-impl<R: io::Read> Reader for InputStream<R> {
+impl<R: io::Read> ReaderInternal for InputStream<R> {
     fn peek_char(&mut self) -> Result<u8, ReadError> {
         match self.inner.peek_char() {
             Ok(c) => Ok(c),
@@ -240,6 +248,8 @@ impl<R: io::Read> Reader for InputStream<R> {
         self.inner.clear();
     }
 }
+
+impl<R: io::Read> Reader for InputStream<R> {}
 
 pub fn read_from_string(input: &str) -> Result<(object::Object, usize), ReadError> {
     let mut r = super::reader::StringStream::new(input);

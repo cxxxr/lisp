@@ -19,7 +19,7 @@ fn main() {
 
     loop {
         prompt("LISP> ").unwrap();
-        match reader.read_ahead() {
+        match reader.read() {
             Ok(x) => match lisp::eval::eval(x, Rc::clone(&env)) {
                 Ok(result) => println!("{}", result),
                 Err(e) => println!("{}", e),
